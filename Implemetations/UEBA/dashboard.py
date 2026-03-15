@@ -4,14 +4,26 @@ import numpy as np
 import joblib
 import json
 import os
+import sys
+
+# Ensure the local directory is in the path for imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from soar_engine import SOAREngine
 
 st.set_page_config(page_title="ZenGuard SOC Dashboard", page_icon="🛡️", layout="wide")
 
 st.title("🛡️ ZenGuard SOC / UEBA Analyst Dashboard")
 st.markdown("Test the Isolation Forest model using manual inputs or simulate a SIEM log integration.")
 
+# Initialize SOAR Engine in session state to persist history
+if 'soar' not in st.session_state:
+    st.session_state.soar = SOAREngine()
+
 # Define path to the model relative to dashboard location
-model_path = os.path.join("implementation result", "zenguard_ueba_model.pkl")
+# Using absolute path derivation to work regardless of CWD
+current_dir = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(current_dir, "implementation result", "zenguard_ueba_model.pkl")
 
 # Ensure the model exists before trying to load
 if not os.path.exists(model_path):
@@ -24,6 +36,17 @@ try:
 except Exception as e:
     st.sidebar.error(f"Error loading model: {e}")
     st.stop()
+
+# Sidebar - SOAR History
+st.sidebar.markdown("---")
+st.sidebar.header("📜 SOAR Execution History")
+history = st.session_state.soar.get_history()
+if not history:
+    st.sidebar.info("No playbooks executed yet.")
+else:
+    for log in reversed(history[-10:]): # Show last 10 actions
+        st.sidebar.markdown(f"**{log['timestamp']}**")
+        st.sidebar.caption(f"{log['playbook']}: {log['status']}")
 
 features = ['session_duration', 'failed_logins', 'access_time', 'device_trust_score', 
             'privilege_change_attempted', 'external_connection', 'MFA_bypassed']
@@ -92,18 +115,25 @@ if st.button("Execute ZenGuard UEBA Analysis", type="primary", use_container_wid
     
     risk_score = 95 if anomaly_pred == -1 else 50
     
+    # Trigger SOAR engine
+    triggered_actions = st.session_state.soar.evaluate_and_respond(risk_score, input_df.iloc[0].to_dict())
+    
     if risk_score == 95:
         st.error("🚨 **High Risk Detected!**")
-        st.write(f"### ZenGuard Risk Score: {risk_score}")
-        st.write(f"**Isolation Forest Raw Score:** {raw_score:.4f}")
-        st.markdown("---")
-        st.markdown("#### SOAR Playbook Auto-Responses Triggered:")
-        st.markdown("- **Action 1:** Enforce Multi-Factor Authentication (MFA)")
-        st.markdown("- **Action 2:** Isolate Endpoint via EDR")
-        st.markdown("- **Action 3:** Revoke Privileges & Terminate Session")
+        res_col1, res_col2 = st.columns([1, 2])
+        with res_col1:
+            st.metric("ZenGuard Risk Score", risk_score, delta="CRITICAL", delta_color="inverse")
+            st.write(f"**Isolation Forest Score:** `{raw_score:.4f}`")
+        
+        with res_col2:
+            st.subheader("🤖 Automated SOAR Responses")
+            for action in triggered_actions:
+                with st.expander(f"✅ {action['playbook']} - Executed", expanded=True):
+                    st.write(f"**Action:** {action['action']}")
+                    st.caption(f"Executed at {action['timestamp']} | Status: {action['status']}")
     else:
         st.success("✅ **Normal Behavior**")
-        st.write(f"### ZenGuard Risk Score: {risk_score}")
+        st.metric("ZenGuard Risk Score", risk_score, delta="LOW", delta_color="normal")
         st.write(f"**Isolation Forest Raw Score:** {raw_score:.4f}")
         st.markdown("---")
         st.markdown("No anomalous behavior detected. User session proceeds without interruption.")
