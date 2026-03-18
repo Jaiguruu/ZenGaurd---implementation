@@ -5,6 +5,7 @@ import os
 import sys
 
 # Add the parent directory (Implemetations) to path for cross-module imports
+# This allows 'from UEBA.model import UEBAModel' and 'from SOAR.engine import SOAREngine'
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
@@ -15,7 +16,7 @@ from SOAR.engine import SOAREngine
 st.set_page_config(page_title="ZenGuard SOC Dashboard", page_icon="🛡️", layout="wide")
 
 st.title("🛡️ ZenGuard SOC / UEBA Analyst Dashboard")
-st.markdown("Integrated Security Operations Dashboard: UEBA Detection & SOAR Response.")
+st.markdown("Modular Integrated Security Operations Dashboard.")
 
 # 1. Initialize Engines in session state
 if 'soar' not in st.session_state:
@@ -23,8 +24,10 @@ if 'soar' not in st.session_state:
 
 if 'ueba' not in st.session_state:
     try:
-        # Assuming the standard path relative to UEBA module
-        st.session_state.ueba = UEBAModel()
+        # Pass the correct model path relative to the new dashboard location
+        # UEBA model is in UEBA/implementation result/
+        model_path = os.path.join(parent_dir, "UEBA", "implementation result", "zenguard_ueba_model.pkl")
+        st.session_state.ueba = UEBAModel(model_path=model_path)
         st.sidebar.success("✅ UEBA Model loaded successfully")
     except Exception as e:
         st.sidebar.error(f"❌ Error loading UEBA model: {e}")
