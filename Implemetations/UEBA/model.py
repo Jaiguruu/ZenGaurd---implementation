@@ -23,13 +23,24 @@ class UEBAModel:
         Returns:
             anomaly_pred: -1 for anomaly, 1 for normal
             raw_score: decision function score
-            risk_score: 95 for anomaly, 50 for normal
+            risk_score: 0–100 continuous risk score
         """
         if self.model is None:
             raise ValueError("Model is not loaded.")
             
         anomaly_pred = self.model.predict(feature_df)[0]
         raw_score = self.model.decision_function(feature_df)[0]
-        risk_score = 95 if anomaly_pred == -1 else 50
-        
+
+        # --- Risk Scoring Logic ---
+        # Typical range of decision_function ≈ [-0.5, 0.5]
+        # Normalize to 0–1
+        min_score, max_score = -0.5, 0.5  
+        normalized = (raw_score - min_score) / (max_score - min_score)
+
+        # Clamp between 0 and 1 (safety)
+        normalized = max(0, min(1, normalized))
+
+        # Invert: lower score = higher risk
+        risk_score = int((1 - normalized) * 100)
+
         return anomaly_pred, raw_score, risk_score
