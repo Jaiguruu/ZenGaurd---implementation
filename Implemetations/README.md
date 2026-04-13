@@ -58,6 +58,23 @@ Open your browser at **http://localhost:8501**.
 
 ---
 
+## 🧠 Core Innovation: Reinforcement Learning & Transparency
+
+The defining novelty of ZenGuard is its move away from static, "if-then" rules toward a **Reinforcement Learning (RL)** powered decision engine.
+
+### 1. The Q-Learning Advantage
+Unlike traditional systems that use hardcoded logic, ZenGuard's **Q-Learning Agent** treats security response as an optimization problem. It has been trained to learn the "Quality" (Q-value) of every possible action for a given risk state:
+- **Optimization**: The agent learns to apply the minimum necessary force—preventing "security fatigue" while ensuring maximum protection.
+- **Context-Awareness**: It understands the nuances of state variables like `MFA_bypassed` or `anomaly_flag` to choose the best combination of MFA, Isolation, and Revocation.
+
+### 2. Radical Transparency (The Thinking Log)
+One of the biggest hurdles in AI security is the "Black Box" problem. ZenGuard solves this with the **RL Thinking Log**. Analysts can see exactly what the AI was "thinking" before a move is made:
+- **Q-Value Visualization**: View the learned rewards for all 7 possible security actions.
+- **Reasoning Traces**: Read a step-by-step logic trace explaining why a specific action was chosen.
+- **SLA Alignment**: See exactly where the Deterministic Policy and RL logic converged or diverged to meet security SLAs.
+
+---
+
 ## 📊 Expected Results Matrix
 
 Use the following table to verify system behavior in the dashboard or test runner:
