@@ -105,21 +105,44 @@ if st.button("Execute Analysis & Response", type="primary", use_container_width=
     triggered_actions = st.session_state.soar.evaluate_and_respond(risk_score, input_df.iloc[0].to_dict())
     
     # --- UI Results ---
-    if risk_score == 95:
-        st.error("🚨 **High Risk Detected!**")
-        res_col1, res_col2 = st.columns([1, 2])
-        with res_col1:
-            st.metric("ZenGuard Risk Score", risk_score, delta="CRITICAL", delta_color="inverse")
-            st.write(f"**Isolation Forest Score:** `{raw_score:.4f}`")
-        
-        with res_col2:
-            st.subheader("🤖 Automated SOAR Responses")
+    st.markdown("### 📊 Analysis Outcome")
+    
+    if risk_score >= 95:
+        st.error("☣️ **CRITICAL RISK DETECTED**")
+        status_color = "inverse"
+        status_text = "CRITICAL"
+        expected = "MFA + Isolate + Revoke"
+    elif risk_score >= 75:
+        st.error("🚨 **HIGH RISK DETECTED**")
+        status_color = "inverse"
+        status_text = "HIGH"
+        expected = "MFA + Isolate"
+    elif risk_score >= 50:
+        st.warning("⚠️ **MEDIUM RISK / ANOMALOUS**")
+        status_color = "off"
+        status_text = "MEDIUM"
+        expected = "Enforce MFA"
+    else:
+        st.success("✅ **NORMAL BEHAVIOR**")
+        status_color = "normal"
+        status_text = "LOW"
+        expected = "None"
+
+    res_col1, res_col2 = st.columns([1, 2])
+    
+    with res_col1:
+        st.metric("ZenGuard Risk Score", risk_score, delta=status_text, delta_color=status_color)
+        st.write(f"**Target Response:** {expected}")
+        st.progress(risk_score / 100)
+    
+    with res_col2:
+        if triggered_actions:
+            st.subheader(f"🤖 Automated SOAR Responses ({len(triggered_actions)})")
             for action in triggered_actions:
                 with st.expander(f"✅ {action['playbook']} - Executed", expanded=True):
                     st.write(f"**Action:** {action['action']}")
                     st.caption(f"Executed at {action['timestamp']}")
-    else:
-        st.success("✅ **Normal Behavior**")
-        st.metric("ZenGuard Risk Score", risk_score, delta="LOW", delta_color="normal")
-        st.write(f"**Isolation Forest Raw Score:** {raw_score:.4f}")
-        st.markdown("No anomalous behavior detected. User session proceeds without interruption.")
+        else:
+            st.info("No automated playbooks triggered.")
+            if risk_score < 50:
+                st.markdown("User session proceeds without interruption.")
