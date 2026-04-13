@@ -31,16 +31,25 @@ class UEBAModel:
         anomaly_pred = self.model.predict(feature_df)[0]
         raw_score = self.model.decision_function(feature_df)[0]
 
-        # --- Risk Scoring Logic ---
-        # Typical range of decision_function ≈ [-0.5, 0.5]
-        # Normalize to 0–1
-        min_score, max_score = -0.5, 0.5  
+        # --- Risk Scoring Logic (Calibrated for ZenGuard SLAs) ---
+        # Normalize decision function to 0–1
+        # Isolation Forest typically scores anomalies between -0.1 and -0.4
+        min_score, max_score = -0.25, 0.45  
         normalized = (raw_score - min_score) / (max_score - min_score)
 
-        # Clamp between 0 and 1 (safety)
+        # Clamp between 0 and 1
         normalized = max(0, min(1, normalized))
 
         # Invert: lower score = higher risk
         risk_score = int((1 - normalized) * 100)
-
+        
+        # --- Feature-Aware SLA Boosting ---
+        # Ensure high-signal events land in their designated bands
+        if feature_df.get('MFA_bypassed', [0]).iloc[0] == 1:
+            risk_score = max(risk_score, 95) # Critical
+        elif feature_df.get('privilege_change_attempted', [0]).iloc[0] == 1:
+            risk_score = max(risk_score, 75) # High
+        elif feature_df.get('failed_logins', [0]).iloc[0] >= 5:
+            risk_score = max(risk_score, 50) # Medium
+            
         return anomaly_pred, raw_score, risk_score
