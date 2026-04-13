@@ -1,119 +1,80 @@
-# 🛡️ ZenGuard Master Documentation
+# 🛡️ ZenGuard: SOC / UEBA & SOAR Automation
 
-Welcome to the **ZenGuard Framework**, a modular Zero-Trust security solution that bridges the gap between raw SIEM data and automated response via Machine Learning and Reinforcement Learning.
+ZenGuard is an end-to-end security framework that integrates **User and Entity Behavior Analytics (UEBA)** with an **Automated SOAR Response Engine**. It uses Machine Learning to detect anomalies in SIEM logs and Reinforcement Learning (RL) to execute surgical security playbooks in real-time.
 
 ---
 
-## 🗺️ System Architecture
+## 🚀 Getting Started
 
-ZenGuard follows an **API-First, Vendor-Neutral** architecture designed to process telemetry in real-time.
-
-```mermaid
-graph TD
-    A[SIEM Event Logs] -->|JSON Stream| B[UEBA Anomaly Detection]
-    B -->|Risk Score 0-100| C[SOAR Decision Engine]
-    
-    subgraph UEBA Logic
-        B1[Isolation Forest] -->|Raw Score| B2[Linear Calibration]
-        B2 -->|Calibration| B3[SLA Boosting Layer]
-        B3 -->|Final Risk Score| C
-    end
-    
-    subgraph SOAR Logic
-        C1[RL Thinking Log] --> C2[Q-Learning Agent]
-        C2 -->|Action Recommendation| C3[Deterministic Policy]
-        C3 -->|Final Enforcement| D[Security Playbooks]
-    end
-    
-    D --> D1[Enforce MFA]
-    D --> D2[Isolate Endpoint]
-    D --> D3[Revoke Privileges]
+### Prerequisites
+Ensure you have Python 3.8+ installed. You will need the following libraries:
+```bash
+pip install pandas scikit-learn joblib streamlit numpy
 ```
 
----
+### 1. Clone the Repository
+```bash
+git clone https://github.com/Jaiguruu/ZenGaurd---implementation.git
+cd ZenGaurd---implementation/Implemetations
+```
 
-## 🧠 UEBA: The Intelligence Layer
-The User and Entity Behavior Analytics (UEBA) module is responsible for identifying "unseen" threats that static rules miss.
+### 2. Prepare the Models
+The system relies on a trained UEBA model and an RL Q-table.
+- **Train SOAR RL Agent**:
+  ```bash
+  cd SOAR
+  python train_rl_agent.py
+  cd ..
+  ```
 
-### Core Model: Isolation Forest
-We use the **Isolation Forest** algorithm because it excels at anomaly detection in high-dimensional security data without requiring labeled "attack" samples.
-- **n_estimators**: 100
-- **contamination**: 0.05 (Assumes 5% of traffic is anomalous)
+### 3. Run Automated Tests
+Verify that the integration is working correctly across all 4 risk scenarios (Normal, Medium, High, and Critical).
+```bash
+cd Integration
+python test_scenarios_runner.py
+```
 
-### Risk Calibration & SLA Boosting
-To ensure that security SLAs are met, the model uses a two-stage scoring process:
-1.  **Linear Normalization**: Maps the complex decision function output to a human-readable 0-100 scale.
-2.  **SLA Boosting**: Critical security indicators (like MFA Bypass) are automatically "pushed" into the relevant risk band to guarantee immediate response.
-
----
-
-## ⚡ SOAR: The Enforcement Layer
-The Security Orchestration, Automation, and Response (SOAR) module converts risk scores into surgical actions.
-
-### 1. Deterministic Security Policy
-ZenGuard enforces a strict policy to guarantee compliance with security SLAs:
-
-| Risk Band | Risk Score | Expected SOAR Response |
-| :--- | :--- | :--- |
-| **LOW** | 0 – 49 | No automated action needed. |
-| **MEDIUM** | 50 – 74 | **Enforce MFA** |
-| **HIGH** | 75 – 94 | **Enforce MFA + Isolate Endpoint** |
-| **CRITICAL**| 95 – 100| **Enforce MFA + Isolate + Revoke Privileges** |
-
-### 2. Reinforcement Learning (Q-Learning)
-The system uses a **Q-Learning Agent** to optimize decision-making. The agent learns from rewards during training:
-- **States**: (Risk Band, MFA Bypass Context, Anomaly Flag)
-- **Actions**: 0-6 discrete combinations of playbooks.
-- **Rewards**: Positive for accurate low-risk passes and high-risk captures; negative for over-responses or missing critical threats.
-
-### 3. Transparency: RL Thinking Log
-Analyst observability is critical. Every decision generates an **RL Thinking Log** that reveals:
-- The exact **Q-Values** learned for every possible action.
-- Whether the RL choice matched or was **overridden** by the deterministic policy.
-- A natural-language trace of the evaluation.
+### 4. Launch the Dashboard
+Experience the ZenGuard Analyst Dashboard:
+```bash
+streamlit run dashboard.py
+```
+Open your browser at **http://localhost:8501**.
 
 ---
 
-## 📋 Operational Guide
+## 📂 Project Structure & Components
 
-### 🧱 Setup Sequence
-Follow these steps to initialize and verify the system:
-
-1.  **UEBA Setup**: Ensure `UEBA/implementation result/zenguard_ueba_model.pkl` is present.
-2.  **Agent Training**:
-    ```bash
-    cd SOAR
-    python train_rl_agent.py
-    ```
-3.  **Automated Verification**:
-    ```bash
-    cd Integration
-    python test_scenarios_runner.py
-    ```
-    *All 4 scenarios must return **PASS**.*
-
-4.  **Transparency Check**:
-    ```bash
-    cd Integration
-    python test_rl_thinking.py
-    ```
-    *Review the RL trace for Decision Transparency.*
-
-5.  **Dashboard Launch**:
-    ```bash
-    cd Integration
-    streamlit run dashboard.py
-    ```
+| Directory / File | Contribution |
+| :--- | :--- |
+| **`UEBA/`** | The Anomaly Detection brain. Uses **Isolation Forest** to score incoming telemetry. |
+| **`UEBA/model.py`** | Contains the linear calibration logic and SLA-based risk boosting. |
+| **`SOAR/`** | The Response Engine. Orchestrates automated playbooks. |
+| **`SOAR/rl_agent.py`** | A Q-Learning agent that optimizes security decisions based on learned rewards. |
+| **`SOAR/engine.py`** | The core engine that balances RL recommendations with a deterministic safety policy. |
+| **`Integration/`** | The fusion layer connecting UEBA, SOAR, and the Analyst UI. |
+| **`Integration/dashboard.py`** | Streamlit-based dashboard for real-time SIEM log analysis. |
+| **`Integration/test_rl_thinking.py`** | Transparency tool that logs the "RL Thinking Process" for security analysts. |
 
 ---
 
-## 📄 Source Material & Technical Wiki
-For further deep dives, refer to:
-- **[Onboarding Wiki](file:///d:/zenGUARD/ZenGaurd---implementation/Implemetations/UEBA/README.md)**: Conceptual mapping for new security engineers.
-- **[Manual Verification Guide](file:///d:/zenGUARD/ZenGaurd---implementation/Implemetations/Integration/manual_verification_guide.md)**: Ready-to-use SIEM payloads for dashboard testing.
-- **CICIDS2017 Dataset**: The foundational data used for behavioral profiling (accessed via `kagglehub`).
+## 📊 Expected Results Matrix
+
+Use the following table to verify system behavior in the dashboard or test runner:
+
+| Scenario | Risk Band | Risk Score | Playbooks Triggered |
+| :--- | :--- | :--- | :--- |
+| **Normal Activity** | LOW | 0–49 | None |
+| **Brute Force Attempt** | MEDIUM | 50–74 | Enforce MFA |
+| **High Risk Anomaly** | HIGH | 75–94 | Enforce MFA + Isolate Endpoint |
+| **Critical (MFA Bypass)** | CRITICAL | 95–100 | Enforce MFA + Isolate + Revoke |
 
 ---
 
-> [!IMPORTANT]
-> **ZenGuard** is designed for extensibility. The modular separation of UEBA and SOAR allows you to swap the Anomaly Model or refine the Playbooks without rewriting the core integration logic.
+## 🛠️ Key Features
+- **Deterministic SLA Enforcement**: Guarantees specific security actions for every risk band.
+- **RL Transparency**: The "Thinking Log" provides a full trace of why the AI made a decision.
+- **Zero-Trust Ready**: Designed to integrate with Firewalls, IdPs, and EDR systems via modular playbooks.
+
+---
+Developed as part of the ZenGuard Security Framework Implementation.
