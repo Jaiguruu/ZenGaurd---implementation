@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+File: dashboard/templates/index.html
+Project: ZenGuard Zero Trust SIEM — Phase 6: Presentation Layer
+Description: Main dashboard page. Dark-mode, premium enterprise SIEM UI.
+             All data is loaded dynamically by app.js via the Flask REST API.
+             Chart.js and Bootstrap 5 are loaded from CDN — no build step.
+================================================================================
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZenGuard SIEM — Zero Trust Dashboard</title>
+  <meta name="description" content="ZenGuard Zero Trust SIEM real-time security event dashboard with SOAR response capabilities." />
+
+  <!-- =========================================================
+       EXTERNAL DEPENDENCIES (CDN — no build step required)
+       ========================================================= -->
+
+  <!-- Bootstrap 5.3 — grid, modals, badges, buttons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+  <!-- Google Fonts: Inter — the gold standard for dashboard UIs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" />
+
+  <!-- =========================================================
+       CUSTOM STYLES
+       ========================================================= -->
+  <style>
+    /* ---------------------------------------------------------------
+       DESIGN TOKENS — single source of truth for the color palette.
+       Changing these 6 colors reskins the entire dashboard.
+    --------------------------------------------------------------- */
+    :root {
+      --bg-base:        #080c14;   /* deepest background */
+      --bg-surface:     #0d1321;   /* cards, panels */
+      --bg-elevated:    #131c2e;   /* table rows, inputs */
+      --bg-hover:       #1a2540;   /* hover state */
+      --border:         #1e2d45;   /* subtle borders */
+      --border-bright:  #2a3f5f;
+
+      --accent-blue:    #3b82f6;
+      --accent-cyan:    #06b6d4;
+      --accent-purple:  #8b5cf6;
+      --accent-green:   #10b981;
+
+      --text-primary:   #e2e8f0;
+      --text-secondary: #94a3b8;
+      --text-muted:     #475569;
+
+      --sev-critical:   #ef4444;
+      --sev-high:       #f97316;
+      --sev-medium:     #eab308;
+      --sev-low:        #22c55e;
+      --sev-unknown:    #64748b;
+
+      --font-sans:      'Inter', system-ui, sans-serif;
+      --font-mono:      'JetBrains Mono', 'Fira Code', monospace;
+
+      --radius-sm:      6px;
+      --radius-md:      10px;
+      --radius-lg:      16px;
+      --shadow-card:    0 4px 24px rgba(0,0,0,0.4);
+      --glow-blue:      0 0 20px rgba(59,130,246,0.15);
+    }
+
+    /* ---------------------------------------------------------------
+       BASE RESETS
+    --------------------------------------------------------------- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      /* Subtle grid pattern overlay */
+      background-image:
+        linear-gradient(rgba(59,130,246,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ---------------------------------------------------------------
+       SCROLLBAR
+    --------------------------------------------------------------- */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-surface); }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+    /* ---------------------------------------------------------------
+       TOPBAR / NAVBAR
+    --------------------------------------------------------------- */
+    .topbar {
+      background: rgba(13, 19, 33, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .brand-name {
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.5px;
+      background: linear-gradient(90deg, #fff, var(--accent-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-layer {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    /* Live pulse indicator */
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+      50%       { opacity: 0.8; transform: scale(1.1); box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+    }
+
+    /* Timestamp display */
+    .topbar-clock {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* ---------------------------------------------------------------
+       MAIN LAYOUT
+    --------------------------------------------------------------- */
+    .main-content {
+      padding: 1.75rem 2rem 3rem;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    /* ---------------------------------------------------------------
+       KPI CARDS (Top Row)
+    --------------------------------------------------------------- */
+    .kpi-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+      box-shadow: var(--shadow-card);
+    }
+
+    .kpi-card:hover {
+      border-color: var(--border-bright);
+      transform: translateY(-2px);
+    }
+
+    /* Decorative gradient accent bar at top of each card */
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .kpi-card.accent-blue::before   { background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); }
+    .kpi-card.accent-orange::before { background: linear-gradient(90deg, var(--sev-high), #fbbf24); }
+    .kpi-card.accent-red::before    { background: linear-gradient(90deg, var(--sev-critical), #ec4899); }
+    .kpi-card.accent-green::before  { background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan)); }
+    .kpi-card.accent-purple::before { background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue)); }
+
+    .kpi-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .kpi-icon.blue   { background: rgba(59,130,246,0.15);  color: var(--accent-blue); }
+    .kpi-icon.orange { background: rgba(249,115,22,0.15);  color: var(--sev-high); }
+    .kpi-icon.red    { background: rgba(239,68,68,0.15);   color: var(--sev-critical); }
+    .kpi-icon.green  { background: rgba(16,185,129,0.15);  color: var(--accent-green); }
+    .kpi-icon.purple { background: rgba(139,92,246,0.15);  color: var(--accent-purple); }
+
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .kpi-label {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .kpi-delta {
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+    .kpi-delta.up   { color: var(--sev-critical); }
+    .kpi-delta.down { color: var(--accent-green); }
+
+    /* ---------------------------------------------------------------
+       CHART CARD (Middle Row)
+    --------------------------------------------------------------- */
+    .chart-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-card);
+      height: 100%;
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+
+    #riskDonutChart {
+      max-height: 240px;
+    }
+
+    /* Legend for the donut chart */
+    .chart-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 1rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .legend-count {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Event type breakdown list */
+    .event-type-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .event-type-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-sm);
+      font-size: 0.76rem;
+    }
+
+    .event-type-item .count {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--accent-cyan);
+    }
+
+    .event-type-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .event-type-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+      border-radius: 2px;
+      transition: width 0.5s ease;
+    }
+
+    /* ---------------------------------------------------------------
+       EVENTS TABLE (Bottom Row)
+    --------------------------------------------------------------- */
+    .events-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+
+    .events-card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .events-table-wrap {
+      overflow-x: auto;
+    }
+
+    table.events-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    table.events-table thead tr th {
+      background: var(--bg-elevated);
+      padding: 10px 14px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+    }
+
+    table.events-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    table.events-table tbody tr:last-child { border-bottom: none; }
+    table.events-table tbody tr:hover { background: var(--bg-hover); }
+
+    /* New-event highlight animation */
+    table.events-table tbody tr.new-row {
+      animation: rowSlideIn 0.4s ease forwards;
+    }
+
+    @keyframes rowSlideIn {
+      from { opacity: 0; transform: translateX(-10px); background: rgba(59,130,246,0.1); }
+      to   { opacity: 1; transform: translateX(0);     background: transparent; }
+    }
+
+    table.events-table td {
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .td-mono {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+    }
+
+    .td-event-id {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---------------------------------------------------------------
+       SEVERITY BADGES
+    --------------------------------------------------------------- */
+    .badge-sev {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.67rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .badge-sev.critical { background: rgba(239,68,68,0.15);   color: var(--sev-critical); border: 1px solid rgba(239,68,68,0.3); }
+    .badge-sev.high     { background: rgba(249,115,22,0.15);  color: var(--sev-high);    border: 1px solid rgba(249,115,22,0.3); }
+    .badge-sev.medium   { background: rgba(234,179,8,0.15);   color: var(--sev-medium);  border: 1px solid rgba(234,179,8,0.3); }
+    .badge-sev.low      { background: rgba(34,197,94,0.15);   color: var(--sev-low);     border: 1px solid rgba(34,197,94,0.3); }
+    .badge-sev.unknown  { background: rgba(100,116,139,0.15); color: var(--sev-unknown); border: 1px solid rgba(100,116,139,0.3); }
+
+    /* Event type badge */
+    .badge-type {
+      display: inline-block;
+      padding: 2px 8px;
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.2);
+      color: var(--accent-cyan);
+      border-radius: 4px;
+      font-size: 0.67rem;
+      font-weight: 500;
+    }
+
+    /* ---------------------------------------------------------------
+       RISK SCORE GAUGE
+    --------------------------------------------------------------- */
+    .risk-score-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .risk-score-bar {
+      width: 60px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .risk-score-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    .risk-score-num {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      min-width: 32px;
+    }
+
+    /* ---------------------------------------------------------------
+       SOAR ACTION BUTTONS
+    --------------------------------------------------------------- */
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 9px;
+      border: 1px solid;
+      border-radius: var(--radius-sm);
+      font-size: 0.67rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: transparent;
+      white-space: nowrap;
+    }
+
+    .action-btn:hover { transform: translateY(-1px); }
+
+    .btn-block-ip  { color: var(--sev-critical); border-color: rgba(239,68,68,0.4); }
+    .btn-block-ip:hover  { background: rgba(239,68,68,0.1); }
+
+    .btn-isolate   { color: var(--sev-high); border-color: rgba(249,115,22,0.4); }
+    .btn-isolate:hover   { background: rgba(249,115,22,0.1); }
+
+    .btn-mfa       { color: var(--accent-purple); border-color: rgba(139,92,246,0.4); }
+    .btn-mfa:hover       { background: rgba(139,92,246,0.1); }
+
+    .btn-whitelist { color: var(--text-muted); border-color: var(--border); }
+    .btn-whitelist:hover { background: var(--bg-hover); color: var(--text-secondary); }
+
+    /* SOAR action taken indicator */
+    .soar-done-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--accent-green);
+    }
+
+    /* ---------------------------------------------------------------
+       FILTER BAR
+    --------------------------------------------------------------- */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-select {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: var(--radius-sm);
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .filter-select:focus { outline: none; border-color: var(--accent-blue); }
+
+    .btn-refresh {
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.3);
+      color: var(--accent-blue);
+      border-radius: var(--radius-sm);
+      padding: 5px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-refresh:hover { background: rgba(59,130,246,0.2); }
+
+    /* ---------------------------------------------------------------
+       EMPTY / LOADING STATE
+    --------------------------------------------------------------- */
+    #events-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .spinner-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .spinner-dot {
+      width: 6px; height: 6px;
+      background: var(--accent-blue);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .spinner-dot:nth-child(2) { animation-delay: 0.2s; }
+    .spinner-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40%            { transform: scale(1);   opacity: 1; }
+    }
+
+    /* ---------------------------------------------------------------
+       MODAL — Event Detail Drilldown
+    --------------------------------------------------------------- */
+    .modal-content {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-lg);
+      color: var(--text-primary);
+    }
+
+    .modal-header { border-bottom: 1px solid var(--border); }
+    .modal-footer { border-top: 1px solid var(--border); }
+
+    .modal-header .btn-close { filter: invert(1) opacity(0.5); }
+
+    .json-viewer {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--accent-cyan);
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* ---------------------------------------------------------------
+       TOAST NOTIFICATION
+    --------------------------------------------------------------- */
+    .toast-container { z-index: 9999; }
+
+    .zenguard-toast {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      min-width: 300px;
+    }
+
+    .zenguard-toast.success { border-left: 3px solid var(--accent-green); }
+    .zenguard-toast.error   { border-left: 3px solid var(--sev-critical); }
+    .zenguard-toast.info    { border-left: 3px solid var(--accent-blue); }
+
+    /* ---------------------------------------------------------------
+       RESPONSIVE OVERRIDES
+    --------------------------------------------------------------- */
+    @media (max-width: 768px) {
+      .main-content { padding: 1rem; }
+      .topbar { padding: 0 1rem; }
+      .kpi-value { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- =====================================================================
+       TOPBAR
+  ====================================================================== -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-logo">🛡</div>
+      <div>
+        <div class="brand-name">ZenGuard SIEM</div>
+        <div class="brand-layer">Zero Trust Framework — Layer 2</div>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div class="live-indicator">
+        <div class="pulse-dot"></div>
+        <span id="live-status">Listening</span>
+      </div>
+      <div class="topbar-clock" id="topbar-clock">—</div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MAIN CONTENT
+  ====================================================================== -->
+  <div class="main-content">
+
+    <!-- ── ROW 1: KPI CARDS ──────────────────────────────────────────── -->
+    <div class="section-label">Security Posture Overview</div>
+    <div class="row g-3 mb-4">
+
+      <div class="col-6 col-md-4 col-xl">
+        <div class="kpi-card accent-blue">
+          <div class="kpi-icon blue"><i class="bi bi-activity"></i></div>
+          <div class="kpi-value" id="kpi-total">—</div>
+          <div class="kpi-label">Events Fetched</div>
+          <div class="kpi-delta up" id="kpi-total-delta"></div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-4 col-xl">
+        <div class="kpi-card accent-red">
+          <div class="kpi-icon red"><i class="bi bi-exclamation-octagon"></i></div>
+          <div class="kpi-value" id="kpi-high-risk">—</div>
+          <div class="kpi-label">High Risk Count</div>
+          <div class="kpi-delta up" id="kpi-high-delta"></div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-4 col-xl">
+        <div class="kpi-card accent-orange">
+          <div class="kpi-icon orange"><i class="bi bi-shield-exclamation"></i></div>
+          <div class="kpi-value" id="kpi-critical">—</div>
+          <div class="kpi-label">Critical Severity</div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-4 col-xl">
+        <div class="kpi-card accent-purple">
+          <div class="kpi-icon purple"><i class="bi bi-person-x"></i></div>
+          <div class="kpi-value" id="kpi-failed-logins">—</div>
+          <div class="kpi-label">Failed Logins</div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-4 col-xl">
+        <div class="kpi-card accent-green">
+          <div class="kpi-icon green"><i class="bi bi-check-circle"></i></div>
+          <div class="kpi-value" id="kpi-soar-actions">0</div>
+          <div class="kpi-label">SOAR Actions</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── ROW 2: CHART + BREAKDOWN ──────────────────────────────────── -->
+    <div class="section-label">Risk Distribution</div>
+    <div class="row g-3 mb-4">
+
+      <!-- Donut Chart -->
+      <div class="col-md-4">
+        <div class="chart-card">
+          <div class="card-title"><i class="bi bi-pie-chart-fill text-primary"></i> Severity Distribution</div>
+          <div class="card-subtitle">Real-time breakdown of event severity levels</div>
+          <canvas id="riskDonutChart"></canvas>
+          <div class="chart-legend" id="chart-legend"></div>
+        </div>
+      </div>
+
+      <!-- Event Type Breakdown -->
+      <div class="col-md-4">
+        <div class="chart-card">
+          <div class="card-title"><i class="bi bi-bar-chart-fill text-info"></i> Event Type Breakdown</div>
+          <div class="card-subtitle">Top threat categories this session</div>
+          <div id="event-type-breakdown" class="event-type-list mt-3"></div>
+        </div>
+      </div>
+
+      <!-- Timeline Sparkline -->
+      <div class="col-md-4">
+        <div class="chart-card">
+          <div class="card-title"><i class="bi bi-graph-up text-warning"></i> Alert Timeline</div>
+          <div class="card-subtitle">Events captured over the last 60 seconds</div>
+          <canvas id="timelineChart" style="max-height:240px;"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── ROW 3: LIVE EVENTS TABLE ──────────────────────────────────── -->
+    <div class="section-label">Live Event Stream</div>
+    <div class="events-card">
+      <div class="events-card-header">
+        <div>
+          <div class="card-title" style="margin-bottom:2px;">
+            <i class="bi bi-table"></i> Security Events
+            <span class="badge bg-dark border ms-1" id="table-count" style="font-size:0.65rem;">0</span>
+          </div>
+          <div class="card-subtitle" style="margin:0;">
+            Polling every 2s — click <strong>Detail</strong> to inspect raw event
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <!-- Severity filter -->
+          <select class="filter-select" id="filter-severity" title="Filter by severity">
+            <option value="">All Severities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+
+          <!-- Event type filter -->
+          <select class="filter-select" id="filter-type" title="Filter by event type">
+            <option value="">All Types</option>
+            <option value="failed_logins">Failed Logins</option>
+            <option value="snort_alerts">Snort Alerts</option>
+            <option value="privilege_escalation">Privilege Escalation</option>
+            <option value="wazuh_alert">Wazuh Alerts</option>
+            <option value="port_scan">Port Scan</option>
+          </select>
+
+          <!-- Manual refresh button -->
+          <button class="btn-refresh" id="btn-refresh" title="Force refresh">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="events-table-wrap">
+        <table class="events-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>TIME</th>
+              <th>USER</th>
+              <th>DEVICE / IP</th>
+              <th>EVENT TYPE</th>
+              <th>SEVERITY</th>
+              <th>RISK SCORE</th>
+              <th>ACTIONS</th>
+              <th>DETAIL</th>
+            </tr>
+          </thead>
+          <tbody id="events-tbody">
+            <tr id="events-empty">
+              <td colspan="9">
+                <div style="text-align:center; padding:2.5rem 1rem; color:var(--text-muted);">
+                  <div class="spinner-wrap" style="justify-content:center; margin-bottom:0.75rem;">
+                    <div class="spinner-dot"></div>
+                    <div class="spinner-dot"></div>
+                    <div class="spinner-dot"></div>
+                  </div>
+                  Waiting for events from SIEM Listener…
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+
+
+  <!-- =====================================================================
+       EVENT DETAIL MODAL
+  ====================================================================== -->
+  <div class="modal fade" id="eventDetailModal" tabindex="-1" aria-labelledby="eventDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title" id="eventDetailModalLabel">
+            <i class="bi bi-search me-2"></i>Event Raw Data
+          </h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <pre class="json-viewer" id="modal-json-content">Loading…</pre>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       TOAST NOTIFICATION CONTAINER
+  ====================================================================== -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></div>
+
+
+  <!-- =====================================================================
+       SCRIPTS (CDN)
+  ====================================================================== -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <!-- ZenGuard Frontend Logic -->
+  <script src="/static/js/app.js"></script>
+
+</body>
+</html>
