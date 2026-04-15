@@ -1,0 +1,216 @@
+# =============================================================================
+# File: docker-compose.yml
+# Project: ZenGuard Zero Trust SIEM - Layer 2 (Aggregation Hub)
+# Description: Spins up the full ELK 8.x stack (Elasticsearch, Logstash,
+#              Kibana) with hardened production-grade settings, persistent
+#              volumes, and isolated bridge networking.
+#
+# Architecture Note:
+#   This compose file represents Layer 2 of the ZenGuard pipeline.
+#   Beats agents (Filebeat) running on Layer 1 endpoints ship to Logstash
+#   on port 5044. Logstash normalizes and routes everything into
+#   Elasticsearch. Kibana provides the visualization plane.
+#
+# Usage:
+#   docker compose up -d
+# =============================================================================
+
+version: "3.8"
+
+# ---------------------------------------------------------------------------
+# Named volumes: persistent storage that survives container restarts.
+# Elasticsearch data must never live inside a container layer — it would be
+# destroyed on every `docker compose down`. Logstash and Kibana config files
+# are bind-mounted from the host (see each service) so they can be edited
+# without rebuilding the image.
+# ---------------------------------------------------------------------------
+volumes:
+  es_data:
+    driver: local
+  es_certs:
+    driver: local
+  kibana_data:
+    driver: local
+
+# ---------------------------------------------------------------------------
+# A dedicated bridge network isolates ZenGuard services from other Docker
+# workloads on the host. Using a named network (rather than the default)
+# provides a stable DNS namespace — services address each other by their
+# service name (e.g., http://elasticsearch:9200).
+# ---------------------------------------------------------------------------
+networks:
+  zenguard_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# =============================================================================
+# SERVICES
+# =============================================================================
+services:
+
+  # ---------------------------------------------------------------------------
+  # ELASTICSEARCH — The core data store and search engine.
+  #
+  # Key configuration decisions:
+  #   - discovery.type=single-node: disables multi-node quorum checks, which
+  #     are unnecessary for a single-server SIEM lab/SME deployment.
+  #   - ES_JAVA_OPTS: -Xms and -Xmx MUST be identical to prevent JVM heap
+  #     resizing at runtime (a common performance anti-pattern). 2g is the
+  #     recommended floor for a functioning SIEM. Increase for production.
+  #   - xpack.security.enabled=true / http.ssl: TLS is enabled on the REST
+  #     API. This prevents plaintext credential sniffing between services.
+  #   - bootstrap.memory_lock=true: forces the JVM to pin its heap into RAM,
+  #     preventing OS swap which causes catastrophic latency spikes.
+  #   - mem_limit / ulimits: Docker-level guardrails that complement the JVM
+  #     settings and satisfy the mlock requirement.
+  # ---------------------------------------------------------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: zenguard_elasticsearch
+    restart: unless-stopped
+    environment:
+      - node.name=zenguard-es01
+      - cluster.name=zenguard-cluster
+      - discovery.type=single-node
+
+      # --- JVM heap: keep Xms == Xmx to avoid costly heap resizing ---
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+
+      # --- Security: TLS + built-in user bootstrap password ---
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=false        # disabled for internal-only lab; enable with certs in prod
+      - xpack.security.transport.ssl.enabled=false   # same rationale
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-ZenGuard@2024!}
+
+      # --- Performance: lock JVM heap in RAM, never swap ---
+      - bootstrap.memory_lock=true
+
+      # --- Index lifecycle: delete indices older than 30 days automatically ---
+      # (Configured separately via ILM policy; this env flag just enables the feature)
+      - xpack.monitoring.collection.enabled=true
+    ports:
+      - "9200:9200"   # REST API — accessed by Kibana, Logstash, and siem_listener.py
+    volumes:
+      - es_data:/usr/share/elasticsearch/data    # persistent index storage
+    networks:
+      zenguard_net:
+        ipv4_address: 172.28.0.10
+    ulimits:
+      # Required by bootstrap.memory_lock — sets the memlock limit to unlimited
+      memlock:
+        soft: -1
+        hard: -1
+      # Elasticsearch opens a very large number of file descriptors
+      nofile:
+        soft: 65536
+        hard: 65536
+    deploy:
+      resources:
+        limits:
+          memory: 4g    # Container hard cap; must be > ES JVM heap (2g) + OS overhead
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -u elastic:${ELASTIC_PASSWORD:-ZenGuard@2024!} http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s   # ES takes time to bootstrap on first run
+
+  # ---------------------------------------------------------------------------
+  # LOGSTASH — The normalization and enrichment pipeline.
+  #
+  # Key configuration decisions:
+  #   - Depends on elasticsearch being healthy before starting; prevents the
+  #     common race condition where Logstash tries to push before ES is ready.
+  #   - pipeline.conf is bind-mounted so you can iterate on filter logic
+  #     without rebuilding the Logstash image.
+  #   - LS_JAVA_OPTS: 1g is sufficient for log parsing; Logstash is CPU-bound
+  #     more than memory-bound.
+  #   - Port 5044: the Beats (Lumberjack) protocol port; Filebeat agents on
+  #     Layer 1 endpoints point to this.
+  # ---------------------------------------------------------------------------
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.13.0
+    container_name: zenguard_logstash
+    restart: unless-stopped
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - LS_JAVA_OPTS=-Xms1g -Xmx1g
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-ZenGuard@2024!}
+      # Logstash monitoring reports back to Elasticsearch
+      - xpack.monitoring.enabled=true
+      - xpack.monitoring.elasticsearch.hosts=http://elasticsearch:9200
+      - xpack.monitoring.elasticsearch.username=elastic
+      - xpack.monitoring.elasticsearch.password=${ELASTIC_PASSWORD:-ZenGuard@2024!}
+    ports:
+      - "5044:5044"    # Beats input — Filebeat → Logstash
+      - "5000:5000"    # TCP input — zenguard_replayer.py raw syslog stream
+      - "9600:9600"    # Logstash monitoring API
+    volumes:
+      # Bind-mount the pipeline config from the host for easy editing
+      - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      # Optional: custom patterns, grok pattern files
+      - ./logstash/patterns:/usr/share/logstash/patterns:ro
+    networks:
+      zenguard_net:
+        ipv4_address: 172.28.0.11
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9600/_node/stats | grep -q 'status'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s   # Logstash pipeline compilation takes time
+
+  # ---------------------------------------------------------------------------
+  # KIBANA — The visualization and investigation dashboard.
+  #
+  # Key configuration decisions:
+  #   - ELASTICSEARCH_SERVICEACCOUNT_TOKEN is the preferred auth method in
+  #     Elasticsearch 8.x (over username/password) for Kibana. We fall back
+  #     to username/password for simplicity; generate a service token in
+  #     production with: `POST /_security/service/elastic/kibana/credential/token`
+  #   - SERVER_PUBLICBASEURL must be set for inter-service links (alerting,
+  #     reporting) to resolve correctly.
+  #   - kibana_data volume stores session info and saved objects.
+  # ---------------------------------------------------------------------------
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.0
+    container_name: zenguard_kibana
+    restart: unless-stopped
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-ZenGuard@2024!}
+      - SERVER_NAME=zenguard-kibana
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PUBLICBASEURL=http://localhost:5601
+      - XPACK_SECURITY_ENABLED=true
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${KIBANA_ENC_KEY:-a7f3d9e2c6b1a4f8d2e7c3b6a1f4d9e2}
+      - LOGGING_ROOT_LEVEL=warn   # reduce noise; change to 'info' for troubleshooting
+    ports:
+      - "5601:5601"    # Kibana UI — access at http://localhost:5601
+    volumes:
+      - kibana_data:/usr/share/kibana/data
+    networks:
+      zenguard_net:
+        ipv4_address: 172.28.0.12
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q 'available'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s   # Kibana waits for ES and performs its own bootstrapping

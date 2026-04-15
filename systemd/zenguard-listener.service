@@ -1,0 +1,56 @@
+[Unit]
+# =============================================================================
+# File: systemd/zenguard-listener.service
+# Project: ZenGuard Zero Trust SIEM - Layer 2 Listener Daemon
+# Description: systemd unit file to run siem_listener.py as a hardened,
+#              auto-restarting system service.
+#
+# Install:
+#   sudo cp systemd/zenguard-listener.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now zenguard-listener
+#   sudo journalctl -u zenguard-listener -f
+# =============================================================================
+Description=ZenGuard SIEM Listener — Layer 2 UEBA Hand-off Daemon
+Documentation=https://github.com/your-org/zenguard
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zenguard
+Group=zenguard
+
+# Path to the listener script — adjust if the project is in a different location
+WorkingDirectory=/opt/zenguard/siemfinal
+ExecStart=/opt/zenguard/venv/bin/python3 /opt/zenguard/siemfinal/siem_listener.py
+
+# Reload-on-SIGHUP isn't implemented, but this is good practice
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Restart on any non-zero exit code (crash), but NOT on explicit `systemctl stop`
+Restart=on-failure
+RestartSec=10s
+StartLimitIntervalSec=120s
+StartLimitBurst=5   # if the service crashes > 5 times in 120s, systemd gives up
+
+# --- Security hardening ---
+# Run with a minimal capability set — the listener only needs network access.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/var/log/zenguard
+ProtectHome=yes
+# Drop all capabilities (the listener doesn't need any root-like capabilities)
+CapabilityBoundingSet=
+
+# Load environment variables from the .env file (populated from .env.example)
+EnvironmentFile=/opt/zenguard/siemfinal/.env
+
+# Capture stdout/stderr (the JSON payloads and log lines) into the journal
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=zenguard-listener
+
+[Install]
+WantedBy=multi-user.target

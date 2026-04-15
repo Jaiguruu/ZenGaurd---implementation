@@ -1,0 +1,25 @@
+# =============================================================================
+# File: requirements.txt
+# Project: ZenGuard Zero Trust SIEM — Layer 2 + Layer 3 Python dependencies
+# Install: pip install -r requirements.txt
+# =============================================================================
+
+# Elasticsearch official Python client (8.x — matches the ELK stack version)
+# Must match major version of the ES cluster. ES 8.x requires client >= 8.0.
+elasticsearch>=8.13.0,<9.0.0
+
+# python-dotenv: loads .env file into os.environ at process start.
+# Allows secrets (ES_PASSWORD) to live in .env rather than shell exports,
+# which prevents them from appearing in `ps aux` output.
+python-dotenv>=1.0.0
+
+# requests: HTTP client used by siem_listener.py (POST to Flask dashboard)
+# and by the detection engine's AlertWriter (POST alerts to dashboard).
+requests>=2.31.0
+
+# Flask: web framework for the ZenGuard dashboard (dashboard/app.py).
+flask>=3.0.0
+
+# flask-cors: enables CORS on /api/* endpoints so the browser frontend
+# can call the dashboard API from a different port during development.
+flask-cors>=4.0.0

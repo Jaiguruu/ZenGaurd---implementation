@@ -1,0 +1,203 @@
+# =============================================================================
+# File: filebeat/filebeat.yml
+# Project: ZenGuard Zero Trust SIEM - Layer 1 (Endpoint Log Shipper)
+# Description: Filebeat configuration for Layer 1 Ubuntu endpoints.
+#              Each monitored log source is given a `fields.log_type` tag
+#              so that Logstash can correctly route and parse the event
+#              in the logstash.conf filter section.
+#
+# Deployment: Copy this file to /etc/filebeat/filebeat.yml on every
+#             Layer 1 endpoint after running the install commands in
+#             layer1_setup.sh. Then: sudo systemctl restart filebeat
+#
+# SECURITY NOTE: In production, replace the plaintext Logstash address
+#   with a TLS-enabled endpoint and set ssl.certificate_authorities,
+#   ssl.certificate, and ssl.key here.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# FILEBEAT INPUTS
+# Each input block represents one or more log files from a specific source.
+# The `fields` block injects source metadata that Logstash reads to route
+# the event to the correct grok/json parser in the filter section.
+# ---------------------------------------------------------------------------
+filebeat.inputs:
+
+  # -------------------------------------------------------------------------
+  # SOURCE 1: Linux Authentication Log
+  # /var/log/auth.log captures PAM events: SSH logins, sudo usage, su
+  # attempts, account lockouts — the primary vector for insider threat and
+  # brute-force detection in Layer 1.
+  # -------------------------------------------------------------------------
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/auth.log
+      - /var/log/secure          # Red Hat / CentOS equivalent
+    fields:
+      log_type: auth             # Logstash branch: auth log parser
+      endpoint_id: "${HOSTNAME}" # hostname injected at runtime for attribution
+      layer: "1"
+    fields_under_root: true      # merge fields into the root document (not nested)
+
+    # multiline: SSH "Maximum authentication attempts exceeded" spans 2 lines
+    multiline.pattern: '^\w{3}\s+\d{1,2}\s\d{2}:\d{2}:\d{2}'
+    multiline.negate:  true
+    multiline.match:   after
+
+    # scan_frequency: how often Filebeat checks for new lines.
+    # 1s balances real-time alerting vs. inotify overhead.
+    scan_frequency: 1s
+
+    # ignore_older: don't ship log lines more than 24h old on startup.
+    # Prevents flooding ES with historic data after a Filebeat restart.
+    ignore_older: 24h
+
+
+  # -------------------------------------------------------------------------
+  # SOURCE 2: Snort IDS Fast Alert Log
+  # Snort must be configured with `output alert_fast: /var/log/snort/alert`
+  # (see layer1_setup.sh). Fast format is single-line and grok-parseable.
+  # -------------------------------------------------------------------------
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/snort/alert
+    fields:
+      log_type: snort
+      endpoint_id: "${HOSTNAME}"
+      layer: "1"
+    fields_under_root: true
+    scan_frequency: 1s
+    ignore_older: 24h
+
+
+  # -------------------------------------------------------------------------
+  # SOURCE 3: Wazuh EDR Alerts (JSON format)
+  # Wazuh agent writes structured JSON alerts to alerts.json. We ship the
+  # full JSON blob; Logstash's `json` filter parses it server-side.
+  # -------------------------------------------------------------------------
+  - type: log
+    enabled: true
+    paths:
+      - /var/ossec/logs/alerts/alerts.json
+    fields:
+      log_type: wazuh
+      endpoint_id: "${HOSTNAME}"
+      layer: "1"
+    fields_under_root: true
+    scan_frequency: 1s
+    ignore_older: 24h
+    # Wazuh JSON alerts are single-line objects; no multiline needed.
+    json.keys_under_root: false   # let Logstash handle JSON parsing itself
+
+
+  # -------------------------------------------------------------------------
+  # SOURCE 4: Custom Application Logs (structured JSON)
+  # Any application instrumented to write JSON logs to this path will be
+  # shipped and parsed by the `app` branch in Logstash.
+  # -------------------------------------------------------------------------
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/zenguard/app/*.log
+    fields:
+      log_type: app
+      endpoint_id: "${HOSTNAME}"
+      layer: "1"
+    fields_under_root: true
+    scan_frequency: 2s
+    ignore_older: 24h
+
+
+# ---------------------------------------------------------------------------
+# FILEBEAT MODULES
+# Filebeat ships built-in modules for common log sources with pre-built
+# Logstash pipelines and Kibana dashboards. We disable them here because
+# ZenGuard uses a custom Logstash pipeline for full field-level control.
+# ---------------------------------------------------------------------------
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+
+
+# ---------------------------------------------------------------------------
+# OUTPUT — LOGSTASH
+# Filebeat sends events to Logstash via the Beats (Lumberjack) protocol.
+# Replace LOGSTASH_HOST with the IP or hostname of your Layer 2 server.
+#
+# Why Logstash instead of direct ES output?
+#   The direct elasticsearch output bypasses the normalization pipeline.
+#   ALL events must pass through Logstash to ensure canonical field mapping.
+# ---------------------------------------------------------------------------
+output.logstash:
+  hosts: ["LOGSTASH_HOST:5044"]   # <-- Replace with your Layer 2 server IP
+
+  # worker: number of Filebeat workers sending to Logstash in parallel.
+  # 2 is sufficient for most endpoints; increase on high-throughput servers.
+  worker: 2
+
+  # bulk_max_size: maximum number of events per Logstash batch.
+  # Smaller batches reduce latency; larger batches increase throughput.
+  bulk_max_size: 512
+
+  # loadbalance: if multiple Logstash hosts are listed, distribute evenly.
+  loadbalance: true
+
+  # --- TLS (enable in production) ---
+  # ssl.enabled: true
+  # ssl.certificate_authorities: ["/etc/filebeat/certs/logstash-ca.crt"]
+  # ssl.certificate: "/etc/filebeat/certs/filebeat.crt"
+  # ssl.key: "/etc/filebeat/certs/filebeat.key"
+  # ssl.verification_mode: full
+
+
+# ---------------------------------------------------------------------------
+# LOGGING — Filebeat's own log configuration.
+# Logs go to /var/log/filebeat/ so they can be monitored independently.
+# ---------------------------------------------------------------------------
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7              # retain 7 log files before rotating
+  permissions: 0640
+
+logging.metrics.enabled: true
+logging.metrics.period: 30s   # emit internal metrics every 30 seconds
+
+
+# ---------------------------------------------------------------------------
+# PROCESSING — Global processor chain applied to ALL events before shipping.
+# ---------------------------------------------------------------------------
+processors:
+  # Add the host's metadata (OS, hostname, IP) to every event.
+  # This supplements endpoint_id and is useful for inventory tracking.
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+
+  # Enrich with Docker/ECS container info if Filebeat runs inside Docker.
+  - add_docker_metadata: ~
+
+  # Drop internal Filebeat health-check lines to reduce noise in ES.
+  - drop_event:
+      when:
+        or:
+          - contains:
+              message: "filebeat heartbeat"
+          - contains:
+              message: "No new events"
+
+
+# ---------------------------------------------------------------------------
+# SETUP — Controls whether Filebeat auto-creates ES index templates.
+# We disable this since Logstash manages index creation.
+# ---------------------------------------------------------------------------
+setup.template.enabled: false
+setup.ilm.enabled: false
+
+# Kibana connection is only needed for `filebeat setup --dashboards`.
+# Leave configured so the admin can optionally push built-in dashboards.
+setup.kibana:
+  host: "LOGSTASH_HOST:5601"   # <-- same Layer 2 server, different port
