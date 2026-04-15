@@ -1,0 +1,157 @@
+# 🛡️ ZenGuard Zero-Trust Framework
+
+ZenGuard is a modern, AI-driven cybersecurity framework that unites User and Entity Behavior Analytics (UEBA), Security Information and Event Management (SIEM), and Security Orchestration, Automation, and Response (SOAR). 
+
+## 📚 Wiki Architect Documentation
+
+```json
+{
+  "name": "ZenGuard",
+  "title": "ZenGuard Zero-Trust Framework",
+  "prompt": "You are a new engineer onboarding to the ZenGuard zero-trust framework. This wiki provides a high-level conceptual mapping and a guided technical walkthrough.",
+  "children": [
+    {
+      "name": "onboarding",
+      "title": "Onboarding",
+      "prompt": "Read the entire Onboarding guide for both high-level insights and a path towards development zero-to-hero proficiency.",
+      "children": [
+        {
+          "name": "principal_guide",
+          "title": "Principal-Level Guide",
+          "prompt": "High-level architectural insight: ZenGuard replaces static SIEM correlation with adaptive UEBA using an Isolation Forest model to detect lateral movement and insider threats dynamically.",
+          "children": []
+        },
+        {
+          "name": "zero_to_hero",
+          "title": "Zero to Hero Guide",
+          "prompt": "Progressive path: 1) Understand SIEM vs ZTA. 2) Learn Isolation Forest. 3) Map anomalies to SOAR. 4) Run the model pipeline and dashboard.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "getting_started",
+      "title": "Getting Started",
+      "prompt": "A quick reference to the project structure and setup.",
+      "children": [
+        {
+          "name": "overview",
+          "title": "Overview",
+          "prompt": "ZenGuard unifies SIEM, SOAR, and UEBA in an API-first architecture, leveraging scikit-learn and Streamlit.",
+          "children": []
+        },
+        {
+          "name": "setup",
+          "title": "Setup",
+          "prompt": "Install dependencies: `pip install pandas numpy scikit-learn streamlit joblib`. Run the Jupyter notebook, then launch `dashboard.py`.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "deep_dive",
+      "title": "Deep Dive",
+      "prompt": "Dive deep into the ZenGuard system architecture and UEBA subsystem.",
+      "children": [
+        {
+          "name": "architecture",
+          "title": "Architecture",
+          "prompt": "SIEM Aggregation -> UEBA (Isolation Forest) -> SOAR Playbooks -> Auto-Mitigation.",
+          "children": []
+        },
+        {
+          "name": "ueba_model",
+          "title": "UEBA Model & Dashboard",
+          "prompt": "Model trained on synthetic behavioral data. `dashboard.py` provides interactive and JSON-based scoring.",
+          "children": []
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 🚀 Onboarding
+
+### Principal-Level Guide
+ZenGuard transcends traditional threshold-based SIEM models by integrating continuous Machine Learning. Our core architectural insight is moving from "alert-centric" security to "adaptively enforced" Zero Trust Architecture (ZTA).
+
+**Core Architectural Insight (Pseudocode equivalent):**
+```python
+# Instead of rules: if failed_logins > 5 block()
+# We use continuous behavioral scoring:
+def evaluate_session(telemetry_stream):
+    behavior_vector = extract_features(telemetry_stream)
+    anomaly_score, is_anomaly = isolation_forest.predict(behavior_vector)
+    
+    risk_score = 95 if is_anomaly else 50
+    if risk_score > 90:
+        soar.execute_playbook("isolate_endpoint", telemetry_stream.user_id)
+        soar.execute_playbook("enforce_mfa", telemetry_stream.user_id)
+```
+
+**Architecture Flow:**
+```mermaid
+graph TD
+    A[Endpoints / Network] -->|Raw Logs| B(SIEM Aggregator)
+    B -->|Normalized JSON| C{UEBA Engine / Isolation Forest}
+    C -->|Risk = 50| D[Normal Log Record]
+    C -->|Risk = 95| E[SOAR Decision Engine]
+    E --> F[Enforce MFA]
+    E --> G[Isolate Endpoint via EDR]
+    E --> H[Revoke Privileges]
+```
+
+**Design Tradeoffs:**
+- **Algorithm Choice:** We use **Isolation Forest** (see `Implemetations/UEBA/ZenGuard_UEBA_Anomaly_Detection.ipynb:75`) for its `O(n log n)` training speed and low memory footprint, prioritizing real-time scoring over complex Deep Learning overhead.
+- **Where to go deep:** Evaluate how features are synthetically bounded (`Implemetations/UEBA/ZenGuard_UEBA_Anomaly_Detection.ipynb:29`) and how Streamlit bridges UI inputs to the model (`Implemetations/UEBA/dashboard.py:90`).
+
+### Zero-to-Hero Learning Path
+
+**Part I: Language & Tech Foundations**
+- **Python / Data Science:** The stack heavily relies on `pandas` and `scikit-learn`. (Comparison: If you're coming from JS/Node.js, think of pandas as a highly optimized structured data array and scikit-learn as a standardized ML module).
+- **Streamlit:** Used for rapid frontend dashboarding in pure Python.
+
+**Part II: This Codebase's Architecture**
+- **Data Pipeline:** We simulate SIEM data extraction generating 7 core behavioral features (e.g., `device_trust_score`, `privilege_change_attempted`) defined in `Implemetations/UEBA/ZenGuard_UEBA_Anomaly_Detection.ipynb:29`.
+- **UEBA Model:** The model (`zenguard_ueba_model.pkl`) evaluates incoming vectors, outputting an anomaly trace mapped to Risk Scores (50 or 95).
+- **Interactive SOAR Dashboard:** Analysts use `Implemetations/UEBA/dashboard.py:34` to manually parameterize or paste SIEM JSON logs to simulate live mitigations.
+
+**Part III: Dev Setup & Codebase Navigation**
+- `Implemetations/UEBA/ZenGuard_UEBA_Anomaly_Detection.ipynb` - Pipeline definition, data synthesis, and model training.
+- `Implemetations/UEBA/dashboard.py` - The interactive Streamlit dashboard simulating the SOC view.
+- `Implemetations/UEBA/implementation result/zenguard_ueba_model.pkl` - The serialized artifact.
+
+**Appendices: Key Definitions**
+- **UEBA:** User and Entity Behavior Analytics.
+- **SIEM:** Security Information and Event Management.
+- **SOAR:** Security Orchestration, Automation, and Response.
+- **ZTA:** Zero Trust Architecture.
+
+## 🏁 Getting Started
+
+### Overview
+ZenGuard unifies SIEM, SOAR, and UEBA in an API-first architecture designed to autonomously isolate insider threats and compromised credentials.
+
+### Setup & Usage
+1. **Install Dependencies:**
+   ```bash
+   pip install pandas numpy scikit-learn streamlit joblib
+   ```
+2. **Train the UEBA Model:**
+   Open and execute all cells in `Implemetations/UEBA/ZenGuard_UEBA_Anomaly_Detection.ipynb` to generate the synthetic telemetry and serialize the Isolation Forest model.
+3. **Launch the SOC Dashboard:**
+   ```bash
+   cd Implemetations/UEBA
+   streamlit run dashboard.py
+   ```
+   *Reference: `Implemetations/UEBA/dashboard.py:10`*
+
+## 🔍 Deep Dive
+
+### System Subsystems
+- **Data Generator:** Mimics modern SIEM agent integrations (e.g., CrowdStrike/Splunk). Generates business-hour trends vs. off-hours, failed logins, etc.
+- **UEBA Engine (Scikit-Learn):** Set to 15% contamination. It learns the "normal" shape of the data sphere, labeling outliers (lateral movement, impossible travel) effectively.
+- **SOC Dashboard (Streamlit):**
+  - **Manual Playbook:** Interactive sliders for scenario testing.
+  - **SIEM Integration:** A raw JSON payload receiver overriding manual inputs (see `Implemetations/UEBA/dashboard.py:47`). Parses inputs and triggers automated response plans like endpoint lockdown.
