@@ -41,11 +41,14 @@ Prerequisites:
     pip install faker        (realistic synthetic user/hostname generation)
 
 Usage:
-    # Replay a specific CSV file:
-    python zenguard_replayer.py --file path/to/Monday-WorkingHours.pcap_ISCX.csv --dataset cic
+    # Replay a specific CSV file (run from siemfinal/siem/):
+    python zenguard_replayer.py --file ../Datasets/CIC-IDS-2017/Monday-WorkingHours.csv --dataset cic
 
-    # Replay entire CIC-IDS-2017 folder:
-    python zenguard_replayer.py --folder Datasets/CIC-IDS-2017/ --dataset cic
+    # Replay entire CIC-IDS-2017 folder (run from siemfinal/siem/):
+    python zenguard_replayer.py --folder ../Datasets/CIC-IDS-2017/ --dataset cic
+
+    # Or use absolute path (works from anywhere):
+    python zenguard_replayer.py --folder "H:\Desktop\Mini Project\Code\siemfinal\Datasets\CIC-IDS-2017" --dataset cic
 
     # Fire privilege escalation scenario trigger only:
     python zenguard_replayer.py --scenario privilege_escalation
