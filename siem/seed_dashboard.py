@@ -79,6 +79,17 @@ def make_event() -> dict:
     src_ip = rand_ip(external=is_attack and random.random() > 0.3)
     dst_ip = rand_ip(external=False)
 
+    # Map event_type to attack_category for dataset_label consistency
+    et_to_cat = {
+        "failed_logins":       "brute_force",
+        "snort_alerts":        "port_scan",
+        "privilege_escalation":"infiltration",
+        "wazuh_alert":         "malware",
+        "port_scan":           "port_scan",
+        "auth_generic":        "benign",
+    }
+    attack_cat = et_to_cat.get(event_type, "unknown")
+
     return {
         "event_id":    str(uuid.uuid4()),
         "timestamp":   ts.isoformat(),
@@ -97,6 +108,11 @@ def make_event() -> dict:
         "MFA_bypassed":               int(random.random() > 0.85 and is_attack),
         "device_trust_score":         round(random.uniform(0.05, 0.40) if is_attack
                                            else random.uniform(0.65, 1.0), 2),
+        # Dataset provenance — required for dashboard Dataset column
+        "dataset":       "synthetic",
+        "dataset_label": "Synthetic",
+        "attack_category": attack_cat,
+        "raw_label":     attack_cat,
     }
 
 
