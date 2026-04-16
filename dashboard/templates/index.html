@@ -13,7 +13,7 @@ Description: Main dashboard page. Dark-mode, premium enterprise SIEM UI.
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZenGuard SIEM — Zero Trust Dashboard</title>
-  <meta name="description" content="ZenGuard Zero Trust SIEM real-time security event dashboard with SOAR response capabilities." />
+  <meta name="description" content="ZenGuard Zero Trust SIEM — real-time security event monitoring, threat detection, and behavioral analytics dashboard." />
 
   <!-- =========================================================
        EXTERNAL DEPENDENCIES (CDN — no build step required)
@@ -522,7 +522,7 @@ Description: Main dashboard page. Dark-mode, premium enterprise SIEM UI.
     }
 
     /* ---------------------------------------------------------------
-       SOAR ACTION BUTTONS
+       ACTION / DETAIL BUTTONS
     --------------------------------------------------------------- */
     .action-btn {
       display: inline-flex;
@@ -541,27 +541,8 @@ Description: Main dashboard page. Dark-mode, premium enterprise SIEM UI.
 
     .action-btn:hover { transform: translateY(-1px); }
 
-    .btn-block-ip  { color: var(--sev-critical); border-color: rgba(239,68,68,0.4); }
-    .btn-block-ip:hover  { background: rgba(239,68,68,0.1); }
-
-    .btn-isolate   { color: var(--sev-high); border-color: rgba(249,115,22,0.4); }
-    .btn-isolate:hover   { background: rgba(249,115,22,0.1); }
-
-    .btn-mfa       { color: var(--accent-purple); border-color: rgba(139,92,246,0.4); }
-    .btn-mfa:hover       { background: rgba(139,92,246,0.1); }
-
-    .btn-whitelist { color: var(--text-muted); border-color: var(--border); }
-    .btn-whitelist:hover { background: var(--bg-hover); color: var(--text-secondary); }
-
-    /* SOAR action taken indicator */
-    .soar-done-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.65rem;
-      font-weight: 600;
-      color: var(--accent-green);
-    }
+    .detail-btn { color: var(--accent-blue); border-color: rgba(59,130,246,0.3); }
+    .detail-btn:hover { background: rgba(59,130,246,0.1); }
 
     /* ---------------------------------------------------------------
        FILTER BAR
@@ -759,9 +740,9 @@ Description: Main dashboard page. Dark-mode, premium enterprise SIEM UI.
 
       <div class="col-6 col-md-4 col-xl">
         <div class="kpi-card accent-green">
-          <div class="kpi-icon green"><i class="bi bi-check-circle"></i></div>
-          <div class="kpi-value" id="kpi-soar-actions">0</div>
-          <div class="kpi-label">SOAR Actions</div>
+          <div class="kpi-icon green"><i class="bi bi-database-fill"></i></div>
+          <div class="kpi-value" id="kpi-datasets">0</div>
+          <div class="kpi-label">Active Dataset Sources</div>
         </div>
       </div>
 
@@ -811,7 +792,8 @@ Description: Main dashboard page. Dark-mode, premium enterprise SIEM UI.
             <span class="badge bg-dark border ms-1" id="table-count" style="font-size:0.65rem;">0</span>
           </div>
           <div class="card-subtitle" style="margin:0;">
-            Polling every 2s — click <strong>Detail</strong> to inspect raw event
+            Polling every 5s · full refresh every 30s
+            <span id="last-updated" style="margin-left:8px; color:var(--text-muted); font-size:0.68rem;"></span>
           </div>
         </div>
 
@@ -853,7 +835,7 @@ Description: Main dashboard page. Dark-mode, premium enterprise SIEM UI.
               <th>EVENT TYPE</th>
               <th>SEVERITY</th>
               <th>RISK SCORE</th>
-              <th>ACTIONS</th>
+              <th>DATASET</th>
               <th>DETAIL</th>
             </tr>
           </thead>
@@ -882,16 +864,16 @@ Description: Main dashboard page. Dark-mode, premium enterprise SIEM UI.
        EVENT DETAIL MODAL
   ====================================================================== -->
   <div class="modal fade" id="eventDetailModal" tabindex="-1" aria-labelledby="eventDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h6 class="modal-title" id="eventDetailModalLabel">
-            <i class="bi bi-search me-2"></i>Event Raw Data
+            <i class="bi bi-clipboard-data me-2"></i>Event Detail — SIEM Record
           </h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
-          <pre class="json-viewer" id="modal-json-content">Loading…</pre>
+        <div class="modal-body" id="modal-detail-content" style="padding:1.25rem;">
+          <div style="color:var(--text-muted); font-size:0.8rem;">Loading…</div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>

@@ -1,24 +1,24 @@
 """
 ================================================================================
 File: dashboard/app.py
-Project: ZenGuard Zero Trust SIEM — Phase 6: Presentation & SOAR Layer
+Project: ZenGuard Zero Trust SIEM — Phase 6: Presentation Layer
 
 Description:
-    Flask application that acts as the central hub for the ZenGuard dashboard.
-    It receives normalized security event payloads from siem_listener.py via
-    HTTP POST, persists them in a SQLite database for durability across
-    restarts, and serves them to the frontend via a REST API.
+    Flask application that acts as the central hub for the ZenGuard SIEM
+    dashboard. It receives normalized security event payloads from
+    siem_listener.py via HTTP POST, persists them in a SQLite database for
+    durability across restarts, and serves them to the frontend via a REST API.
 
-    It also exposes SOAR action endpoints that simulate real-world automated
-    responses (IP block, user isolation, MFA enforcement). These are currently
-    stub implementations designed to be wired to real security tooling
-    (firewall APIs, AD/LDAP, PAM modules) in production.
+    The dashboard is a pure SIEM visualization layer — it displays ingested
+    events, detection alerts, risk scores, behavioral analytics (UEBA features),
+    and dataset provenance. It does NOT expose SOAR action endpoints in the
+    active frontend flow.
 
 Architecture position:
     siem_listener.py  →  POST /api/ingest  →  SQLite DB
                                                      ↓
     Browser (app.js)  ←  GET  /api/events  ←  Flask API
-    Browser           →  POST /api/soar/*  →  SOAR stubs → (future: real tools)
+    Browser (app.js)  ←  GET  /api/stats   ←  Flask API
 
 Run:
     cd dashboard/
@@ -454,12 +454,17 @@ def get_event_detail(event_id: str):
 
 @app.route("/api/stats", methods=["GET"])
 def get_stats():
-    """Aggregate statistics endpoint — used by the Chart.js donut chart."""
+    """Aggregate statistics endpoint — used by the Chart.js donut chart and KPI cards."""
     with get_db() as conn:
-        rows = conn.execute("""
+        sev_rows = conn.execute("""
             SELECT severity, COUNT(*) as cnt
             FROM events
             GROUP BY severity
+        """).fetchall()
+        type_rows = conn.execute("""
+            SELECT event_type, COUNT(*) as cnt
+            FROM events
+            GROUP BY event_type
         """).fetchall()
         total = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
         high_risk = conn.execute(
@@ -467,9 +472,10 @@ def get_stats():
         ).fetchone()[0]
 
     return api_response({
-        "total":      total,
-        "high_risk":  high_risk,
-        "by_severity": {row["severity"]: row["cnt"] for row in rows},
+        "total":       total,
+        "high_risk":   high_risk,
+        "by_severity": {row["severity"]: row["cnt"] for row in sev_rows},
+        "by_type":     {row["event_type"]: row["cnt"] for row in type_rows if row["event_type"]},
     })
 
 
