@@ -52,8 +52,11 @@ class SOARRLAgent:
         if feature_context and feature_context.get('MFA_bypassed') == 1:
             mfa_bypassed = 1
             
-        anomaly_flag = 1 if risk_score > 74 else 0
-        
+        if feature_context and 'is_anomaly' in feature_context:
+            anomaly_flag = 1 if feature_context['is_anomaly'] else 0
+        else:
+            anomaly_flag = 1 if risk_score > 74 else 0
+
         return (risk_band, mfa_bypassed, anomaly_flag)
 
     def choose_action(self, state, explore=False):
@@ -121,25 +124,10 @@ class SOARRLAgent:
         return reward
 
     def train(self, episodes=5000, save_path="soar_qtable.pkl"):
-        epsilon_min = 0.05
-        decay_rate = (1.0 - epsilon_min) / episodes
-        
-        for _ in range(episodes):
-            risk_score = random.randint(0, 100)
-            mfa_bypassed = random.choice([0, 1])
-            context = {'MFA_bypassed': mfa_bypassed}
-            
-            state = self.get_state(risk_score, context)
-            action = self.choose_action(state, explore=True)
-            
-            reward = self._get_reward(state, action)
-            
-            # Since SOC mitigations are episodic single-step actions for this model, next_state is None
-            self.update(state, action, reward, next_state=None)
-            
-            self.epsilon = max(epsilon_min, self.epsilon - decay_rate)
-            
-        self.save(save_path)
+        raise RuntimeError(
+            "Synthetic training is disabled. Run collect_rl_dataset.py first "
+            "to generate soar_real_training_data.csv, then re-run train_rl_agent.py."
+        )
 
     def explain_decision(self, risk_score, feature_context=None):
         """

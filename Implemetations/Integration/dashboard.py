@@ -146,3 +146,19 @@ if st.button("Execute Analysis & Response", type="primary", use_container_width=
             st.info("No automated playbooks triggered.")
             if risk_score < 50:
                 st.markdown("User session proceeds without interruption.")
+                
+        # Optional: Display RL Thinking Log if available
+        rl_explanation = st.session_state.soar.get_last_rl_explanation()
+        if rl_explanation:
+            st.markdown("---")
+            st.subheader("🧠 RL Agent Thinking Log")
+            with st.expander("View Q-Learning Decision Trace"):
+                for line in rl_explanation['reasoning_trace']:
+                    if "WARNING" in line:
+                        st.warning(line)
+                    elif "BONUS NOTE" in line:
+                        st.success(line)
+                    elif "MATCH" in line:
+                        st.info(line)
+                    else:
+                        st.text(line)

@@ -26,8 +26,8 @@ def main():
         for index, row in df.iterrows():
             risk_score = int(row['risk_score'])
             mfa_bypassed = int(row['MFA_bypassed'])
-            context = {'MFA_bypassed': mfa_bypassed}
-            
+            is_anomaly = bool(row['is_anomaly'])
+            context = {'MFA_bypassed': mfa_bypassed, 'is_anomaly': is_anomaly}
             state = agent.get_state(risk_score, context)
             action = agent.choose_action(state, explore=True)
             
@@ -36,9 +36,11 @@ def main():
             
             agent.epsilon = max(epsilon_min, agent.epsilon - decay_rate)
             
-    else:
-        print(f"[!] REAL DATASET NOT FOUND. Training agent for 5000 random synthetic episodes...")
-        agent.train(episodes=5000, save_path=table_path)
+    if not os.path.exists(data_path):
+        raise FileNotFoundError(
+            f"Training dataset not found at {data_path}. "
+            f"Run collect_rl_dataset.py first to extract real UEBA distributions."
+        )
         
     agent.save(table_path)
     

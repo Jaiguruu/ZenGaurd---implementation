@@ -15,13 +15,13 @@ def test_soar_integration():
     # 1. Initialize Engine
     soar = SOAREngine()
     
-    # 2. Test Case: Normal Activity (Risk 50)
+    # 2. Test Case: Normal Activity (Risk 20)
     print("\n[Test 1] Simulating Normal Activity...")
-    actions_normal = soar.evaluate_and_respond(50)
+    actions_normal = soar.evaluate_and_respond(20)
     if len(actions_normal) == 0:
-        print("SUCCESS: No playbooks triggered for Risk 50.")
+        print("SUCCESS: No playbooks triggered for Risk 20.")
     else:
-        print(f"FAILURE: Triggered {len(actions_normal)} playbooks for Risk 50.")
+        print(f"FAILURE: Triggered {len(actions_normal)} playbooks for Risk 20.")
 
     # 3. Test Case: High Risk (Risk 95)
     print("\n[Test 2] Simulating High Risk Anomaly...")

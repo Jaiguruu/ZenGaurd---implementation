@@ -38,7 +38,8 @@ class SOAREngine:
             if os.path.exists(qtable_path):
                 self.agent.load(qtable_path)
             else:
-                self.agent.train(save_path=qtable_path)
+                print("Warning: soar_qtable.pkl not found. Run train_rl_agent.py to train the agent.")
+                self.fallback_mode = True
         except Exception as e:
             print(f"Warning: RL Agent initialization failed ({e}). Falling back to rule-based logic.")
             self.fallback_mode = True
