@@ -1,97 +1,83 @@
-# ZenGuard UEBA & SIEM/SOAR Documentation
+# UEBA V2 Module: Developer Guide & Architecture
 
-Below is the Wiki Architect Documentation for the ZenGuard implementation, describing how the User and Entity Behavior Analytics (UEBA), SIEM, and SOAR pipelines work synergistically.
+**Role Analogy:** *The Behavioral Profiler*
 
-```json
-{
-  "name": "ZenGuard",
-  "title": "ZenGuard Framework Documentation",
-  "prompt": "You are a new engineer onboarding to the ZenGuard zero-trust framework. This wiki provides a high-level conceptual mapping and a guided technical walkthrough.",
-  "children": [
-    {
-      "name": "onboarding",
-      "title": "Onboarding",
-      "prompt": "Read the entire Onboarding guide for both high-level insights and a path towards development zero-to-hero proficiency.",
-      "children": [
-        {
-          "name": "principal_guide",
-          "title": "Principal-Level Guide",
-          "prompt": "High-level architectural insight: ZenGuard replaces static SIEM correlation with adaptive UEBA using an Isolation Forest model to detect lateral movement and insider threats dynamically. The critical insight is assigning discrete risk scores (e.g., 95 vs 50) based on anomaly outputs from the Isolation Forest, which are then funneled directly to SOAR for real-time automated mitigations like MFA enforcement and endpoint isolation.",
-          "children": []
-        },
-        {
-          "name": "zero_to_hero",
-          "title": "Zero to Hero Guide",
-          "prompt": "Progressive path: 1) Understand traditional SIEM limits vs Zero-Trust Architecture. 2) Learn scikit-learn Isolation Forest (`ZenGuard_UEBA_Anomaly_Detection.ipynb:100`). 3) Study how the model maps anomalies to SOAR actions based on outputs. 4) Run the Colab notebook to generate the trained `zenguard_ueba_model.pkl` artifact.",
-          "children": []
-        }
-      ]
-    },
-    {
-      "name": "getting_started",
-      "title": "Getting Started",
-      "prompt": "A quick reference to the project structure and setup.",
-      "children": [
-        {
-          "name": "overview",
-          "title": "Overview",
-          "prompt": "ZenGuard unifies SIEM, SOAR, and UEBA in a vendor-neutral, API-first architecture. It leverages scikit-learn for model training and Python for automated incident response playbooks.",
-          "children": []
-        },
-        {
-          "name": "setup",
-          "title": "Setup",
-          "prompt": "Install dependencies: `pip install kagglehub pandas numpy scikit-learn joblib`. Execute the Jupyter Notebook to download the CICIDS2017 dataset via the Kaggle API.",
-          "children": []
-        }
-      ]
-    },
-    {
-      "name": "deep_dive",
-      "title": "Deep Dive",
-      "prompt": "Dive deep into the ZenGuard system architecture and machine learning subsystem.",
-      "children": [
-        {
-          "name": "architecture",
-          "title": "Architecture",
-          "prompt": "SIEM Aggregation -> Python Listener -> UEBA (Isolation Forest Model) -> SOAR Decision Engine Playbooks -> Automated Mitigations (MFA/Isolation).",
-          "children": []
-        },
-        {
-          "name": "ueba_model",
-          "title": "UEBA Model details",
-          "prompt": "Uses a computationally lightweight scikit-learn Pipeline with an `IsolationForest(n_estimators=100, contamination=0.05)` configured for rapid scoring.",
-          "children": []
-        }
-      ]
-    }
-  ]
-}
+## Overview
+The User and Entity Behavior Analytics (UEBA) module serves as the primary intelligence bridge between raw SIEM data and autonomous SOAR playbooks. It ingests targeted identity structures (e.g., failed logins, MFA status), evaluates them entirely offline using an unsupervised `IsolationForest`, and exposes endpoints that translate abstract bounds into universally consumable integers for downstream components.
+
+---
+
+## How To Use This Module
+
+### Prerequisites
+Ensure your environment is set up properly for ML processes:
+```bash
+cd implementations/UEBA_V2/
+pip install -r requirements.txt
 ```
 
-## Onboarding Guide
+### Running the Offline Pipeline
+If you are iterating on the data structures or have sourced new raw network files from the SIEM:
+1. **Generate the Dataset:** Run `python generate_dataset.py`. This streams the huge raw capture files and natively condenses 80 columns down into 7 structural identity features tracking to an extremely small `ueba_dataset.csv`.
+2. **Train the Model:** Run `python train.py`. This reads your CSV, conducts a robust 70/30 Test split, formats the `IsolationForest` weights, and saves pure `model.joblib` and `scaler.joblib` binaries to disks.
+3. **Run Validations:** Execute `python test_unit.py` at any time to offline score a fresh 30% holdout split and immediately print the F1 Anomaly Score metrics.
 
-### Principal-Level Guide
-ZenGuard transcends traditional threshold-based SIEM models by integrating continuous Machine Learning. Our core architectural insight is moving from "alert-centric" security to "adaptively enforced" Zero Trust Architecture (ZTA).
-We use the **Isolation Forest** algorithmic model (capable of `O(n log n)` fast training times) to profile normalized telemetry in near real-time without needing high-power GPU clusters, ensuring deployability and scale. The system processes normalized attributes (like session_duration, privilege_changes, device_trust_score) to output interpretable risk classifications, bridging SIEM events with automated SOAR decisive playbooks.
+### Running the Live Inference Server
+When you are ready to allow the SOAR pipeline to begin gathering intelligence:
+```bash
+uvicorn model_server:app --host 0.0.0.0 --port 8000
+```
+This mounts the `joblib` artifacts directly into a REST API framework instantly accessible by any local system decoupled from data science tools.
 
-**Key mechanism:**
-When an event yields `anomaly_score < threshold`, the UEBA engine emits a discrete `risk_score = 95` (high risk) invoking strict orchestration such as MFA challenge prompts or complete endpoint device quarantine, effectively overriding static trust policies.
+---
 
-### Zero-to-Hero Learning Path
+## C4 Architecture Diagrams
 
-**Part I: Foundations**
-- Familiarize yourself with Python data science tools (`scikit-learn` and `pandas` skills). 
-- Learn about `IsolationForest` capabilities from `scikit-learn`, particularly `n_estimators` and `contamination` logic.
-- Review ZTA fundamentals and Security Orchestration Automation & Response (SOAR) principles.
+### 1. Context Diagram
+This highlights exactly where this module sits inside the Zero Trust Pipeline.
 
-**Part II: The Architecture Mapping**
-- Trace the ZenGuard threat flow: Internal and external endpoints and firewalls send raw telemetry logs to the SIEM stack. The SIEM correlates and parses the metadata (IPs, Events), forwarding them to our Python Listener.
-- The Listener hands these inputs to the Machine Learning component (UEBA). The Isolation Forest assesses the behavioral baseline and returns a scaled risk matrix (e.g. 50 or 95).
-- The SOAR playbooks accept the scores as triggers. Catching a *95* prompts immediate network block action via APIs (firewall level) or authentication locks (IdP level). 
+```mermaid
+graph LR
+    classDef main fill:#ec4899,stroke:#831843,stroke-width:2px,color:#fff;
+    
+    SIEM[SIEM Logstash Courier] -->|POST UEBAPayload JSON| UEBA((UEBA Inference Layer)):::main
+    UEBA -->|Expose translated Risk Vectors| SOAR[SOAR Playbook Engine]
+```
 
-**Part III: Dev & Execution**
-- Launch the provided `ZenGuard_UEBA_Anomaly_Detection.ipynb` notebook in Colab or a local Jupyter environment.
-- Step 1: It integrates `kagglehub` dynamically fetching the *CICIDS2017* sample to proxy complex interaction datasets as proof of concept.
-- Step 2-4: Execute the cells to preprocess feature vectors continuously and train the pipeline.
-- Step 5: The pipeline dumps an operational `zenguard_ueba_model.pkl` artifact. In a live SOC integration, ZenGuard's backend script loads this PKL to evaluate inbound streams perpetually!
+### 2. Component Diagram
+This expands exclusively on *our* internal codebase, explaining how the static ML models communicate with the fast inference server.
+
+```mermaid
+graph TD
+    classDef script fill:#f3f4f6,stroke:#6b7280;
+    classDef model fill:#8b5cf6,stroke:#4c1d95,color:#fff;
+    classDef api fill:#10b981,stroke:#064e3b,color:#fff;
+
+    subgraph "Offline Preparation"
+        RawCSV[(Raw SIEM PCAP/CSV)] --> Gen[generate_dataset.py]:::script
+        Gen --> OutCSV[(ueba_dataset.csv)]
+        OutCSV --> Train[train.py]:::script
+        Train --> M[(model.joblib)]:::model
+        Train --> S[(scaler.joblib)]:::model
+    end
+
+    subgraph "Live API Server (FastAPI)"
+        Req[HTTP POST /api/soar/evaluate] --> API[model_server.py]:::api
+        API -. Maps Data .- M
+        API -. Scales Features .- S
+        API -->|JSON Return| Res[{ risk_score: 87, feature_context: {MFA_bypassed: 1} }]
+    end
+```
+
+---
+
+## Integration Guidelines For New UEBA Devs
+
+### What You Need To Know About Upstream (SIEM)
+- **Data Condensation:** The SIEM is noisy. Your FastAPI server must be hardened to ensure it drops data not containing the 7 exact identity columns (`failed_logins`, `MFA_bypassed`, etc).
+- **Polling Structure:** SIEM operates natively asynchronously. It hits your active port `:8000` via standard HTTP payloads every time the buffer clears. You do not need socket management, purely HTTP handlers.
+
+### What You Need To Know About Downstream (SOAR)
+- **Translation Engine:** The SOAR does not have Data Science packages (like `scikit-learn`) capable of deserializing your `joblib` model natively. They require your API to act as the heavy lifter.
+- **Context Injection Loopback:** The RL engine inside SOAR functions purely on states. You **must** provide them a normalized integer (e.g., `Risk Score of 95`) not an isolation bound (-0.422). 
+- Additionally, you **must loopback Context**. If your model sees an anomaly, the SOAR engine needs to know *what specific playbooks* to execute. You inject variables like `"feature_context": {"MFA_bypassed": 1}` so that their Deterministic string logic acts properly against attackers.

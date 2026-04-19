@@ -1,1 +1,0 @@
-event_id,attack_category,session_duration,failed_logins,access_time_hour,device_trust_score,privilege_change_attempted,external_connection,MFA_bypassed,event_type,severity
