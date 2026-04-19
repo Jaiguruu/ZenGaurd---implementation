@@ -171,7 +171,7 @@ CONFIG = {
 
     # --- Logging ---
     "LOG_LEVEL":    os.getenv("LOG_LEVEL",    "INFO"),
-    "LOG_FILE":     os.getenv("LOG_FILE",     "/var/log/zenguard/siem_listener.log"),
+    "LOG_FILE":     os.getenv("LOG_FILE",     "siem_listener.log"),
 }
 
 

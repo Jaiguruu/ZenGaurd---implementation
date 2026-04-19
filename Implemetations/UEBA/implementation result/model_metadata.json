@@ -1,0 +1,19 @@
+{
+  "model_version": "zenguard_ueba_v2",
+  "algorithm": "IsolationForest",
+  "n_estimators": 100,
+  "contamination": 0.05,
+  "features": [
+    "session_duration",
+    "failed_logins",
+    "access_time_hour",
+    "device_trust_score",
+    "privilege_change_attempted",
+    "external_connection",
+    "MFA_bypassed"
+  ],
+  "train_date": "2026-04-16T02:31:55.447791",
+  "train_size": 40000,
+  "test_size": 10000,
+  "data_source": "Offline SIEM synthesis"
+}
