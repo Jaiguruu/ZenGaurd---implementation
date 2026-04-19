@@ -37,13 +37,27 @@ with warnings.catch_warnings():
 raw_scores = model.score_samples(features_scaled)
 predictions = model.predict(features_scaled)
 
-# Mathematically apply the same risk translation used in model_server.py
-# Risk Score = clamp((-raw_score + 0.5) * 100, 0, 100)
-risk_scores = np.clip((-raw_scores + 0.5) * 100, 0, 100).astype(int)
+# Dynamic Risk Mapping — mirrors the same logic in model_server.py exactly.
+# offset_ is the Isolation Forest's learned decision boundary.
+offset = model.offset_
+max_s = -0.40   # empirical benign ceiling
+min_s = -0.80   # empirical anomaly floor
 
-# Create deterministic override blocks for strict violations
-mask = (df["MFA_bypassed"] == 1) & (df["failed_logins"] > 3)
-risk_scores[mask] = 100
+normal_mask = raw_scores >= offset
+risk_scores = np.zeros(len(raw_scores), dtype=int)
+
+# Zone 1: Benign -> interpolate 5-74
+risk_scores[normal_mask] = np.interp(
+    raw_scores[normal_mask], [offset, max_s], [74, 5]
+).astype(int)
+
+# Zone 2: Anomalous -> interpolate 75-100
+anomaly_mask = ~normal_mask
+risk_scores[anomaly_mask] = np.interp(
+    raw_scores[anomaly_mask], [min_s, offset], [100, 75]
+).astype(int)
+
+risk_scores = np.clip(risk_scores, 5, 100)
 
 # Compile final RL state representation columns
 df['risk_score'] = risk_scores

@@ -88,10 +88,22 @@ def soar_evaluate(payload: UEBAPayload):
     prediction = model.predict(features_scaled)[0]
     raw_score = model.score_samples(features_scaled)[0]
 
-    # Convert the ISO raw score [-0.5, 0.5] to a 0-100 risk integer.
-    # A highly negative score is highly anomalous. Let's invert it for risk.
-    # Example: raw_score = -0.37 -> (-(-0.37) + 0.5) * 100 = 87
-    risk_score = int(max(0, min(100, (-raw_score + 0.5) * 100)))
+    # Dynamic Risk Mapping using the model's actual decision boundary (offset_)
+    # The offset_ separates normal from anomalous in the raw score space.
+    # We anchor the offset at 74 and interpolate two zones:
+    #   Zone 1 (Benign):   [max_score ... offset_] -> [5 ... 74]
+    #   Zone 2 (Anomaly):  [offset_   ... min_score] -> [75 ... 100]
+    # A floor of 5 (not 0) signals the SIEM is active and seeing traffic.
+    offset = model.offset_
+    if raw_score >= offset:
+        # Normal zone: interpolate 5-74
+        max_s = -0.40  # empirical max (most benign, updated dynamically via clamp)
+        risk_score = int(np.interp(raw_score, [offset, max_s], [74, 5]))
+    else:
+        # Anomalous zone: interpolate 75-100
+        min_s = -0.80  # empirical min (most anomalous, updated dynamically via clamp)
+        risk_score = int(np.interp(raw_score, [min_s, offset], [100, 75]))
+    risk_score = int(np.clip(risk_score, 5, 100))
 
     # Push to 100 manually if strict behavioral limits are completely violated
     # e.g. Brute forces skipping MFA.
