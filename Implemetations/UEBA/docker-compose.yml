@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  ueba-api:
+    build: .
+    container_name: zenguard_ueba_v2
+    ports:
+      - "8080:8000"
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      # Native curl test to ensure FastAPI is properly returning the static health threshold
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/ueba/predict"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # Optionally mount data volumes if persistent raw log analysis is needed via Docker later
+    # volumes:
+    #   - ./ueba_dataset.csv:/app/ueba_dataset.csv
