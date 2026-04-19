@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenGuard | UEBA Test Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00f2fe;
+            --secondary: #4facfe;
+            --bg: #0b0e14;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #e0e0e0;
+            --risk-low: #00e676;
+            --risk-med: #ffea00;
+            --risk-high: #ff9100;
+            --risk-crit: #ff1744;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 24px;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #888;
+            font-size: 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            margin-bottom: 20px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        .input-group input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: #fff;
+            padding: 10px 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+        }
+
+        .slider-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-control input[type="range"] {
+            flex: 1;
+        }
+
+        .slider-control span {
+            width: 40px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }
+
+        button {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 12px;
+            color: #000;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.6);
+        }
+
+        .scenarios {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .scenario-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+
+        .scenario-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #fff;
+        }
+
+        .result-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .risk-display {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+            position: relative;
+        }
+
+        .risk-gauge {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 8px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .risk-gauge::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 8px solid transparent;
+            border-top-color: var(--risk-color);
+            transform: rotate(var(--risk-rotate));
+            transition: all 0.8s ease;
+        }
+
+        .risk-value {
+            font-size: 3.5rem;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .risk-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .stat-box label {
+            display: block;
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .stat-box span {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .stat-box.anomaly-yes span { color: var(--risk-crit); }
+        .stat-box.anomaly-no span { color: var(--risk-low); }
+
+        .log-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #aaa;
+            white-space: pre-wrap;
+            margin-top: auto;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .status-badge {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #888;
+            margin-right: 8px;
+        }
+
+        .status-online { background: #00e676; box-shadow: 0 0 10px #00e676; }
+        .status-offline { background: #ff1744; }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ZenGuard UEBA</h1>
+            <p><span id="conn-status" class="status-badge"></span> Docker Inference Engine v2.0</p>
+        </header>
+
+        <div class="card">
+            <h2>⚙️ Payload Injection</h2>
+            <form id="ueba-form">
+                <div class="input-group">
+                    <label>Failed Logins</label>
+                    <div class="slider-control">
+                        <input type="range" id="failed_logins" min="0" max="20" value="0">
+                        <span id="v-failed_logins">0</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Session Duration (Minutes)</label>
+                    <div class="slider-control">
+                        <input type="range" id="session_duration" min="0" max="1440" value="30">
+                        <span id="v-session_duration">30</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Access Hour (0-23)</label>
+                    <div class="slider-control">
+                        <input type="range" id="access_hour" min="0" max="23" value="14">
+                        <span id="v-access_hour">14</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Device Trust Score (0.0 - 1.0)</label>
+                    <div class="slider-control">
+                        <input type="range" id="device_trust_score" min="0" max="100" value="90">
+                        <span id="v-device_trust_score">0.9</span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 16px;">
+                    <div class="input-group">
+                        <label>MFA Bypassed</label>
+                        <select id="MFA_bypassed" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; color: #fff; padding: 10px;">
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Ext. Connection</label>
+                        <select id="external_connection" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; color: #fff; padding: 10px;">
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Privilege Change Attempted</label>
+                    <select id="privilege_change_attempted" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; color: #fff; padding: 10px;">
+                        <option value="0">No</option>
+                        <option value="1">Yes</option>
+                    </select>
+                </div>
+
+                <button type="button" class="btn-primary" onclick="evaluatePayload()">Evaluate Verdict</button>
+            </form>
+
+            <div class="scenarios">
+                <button class="scenario-btn" onclick="applyScenario('benign')">Normal User</button>
+                <button class="scenario-btn" onclick="applyScenario('brute')">Brute Force</button>
+                <button class="scenario-btn" onclick="applyScenario('mfa')">MFA Bypass</button>
+                <button class="scenario-btn" onclick="applyScenario('sus')">Insider Suspect</button>
+            </div>
+        </div>
+
+        <div class="result-panel">
+            <div class="card risk-display">
+                <div class="risk-gauge" id="gauge">
+                    <span class="risk-value" id="risk-score">--</span>
+                    <span class="risk-label" id="risk-level">Pending</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box" id="anomaly-box">
+                    <label>Anomaly Detected</label>
+                    <span id="is-anomaly">No</span>
+                </div>
+                <div class="stat-box">
+                    <label>Raw ML Score</label>
+                    <span id="raw-score">--</span>
+                </div>
+            </div>
+
+            <div class="log-box" id="log">Console initialized. Waiting for payload...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8080/api/soar/evaluate";
+        const HEALTH_URL = "http://localhost:8080/health";
+
+        // UI Helpers
+        const inputs = ['failed_logins', 'session_duration', 'access_hour', 'device_trust_score'];
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            const display = document.getElementById('v-' + id);
+            el.addEventListener('input', () => {
+                if(id === 'device_trust_score') {
+                    display.innerText = (el.value / 100).toFixed(1);
+                } else {
+                    display.innerText = el.value;
+                }
+            });
+        });
+
+        async function checkHealth() {
+            try {
+                const res = await fetch(HEALTH_URL);
+                if(res.ok) {
+                    document.getElementById('conn-status').className = 'status-badge status-online';
+                }
+            } catch(e) {
+                document.getElementById('conn-status').className = 'status-badge status-offline';
+            }
+        }
+        setInterval(checkHealth, 3000);
+        checkHealth();
+
+        function applyScenario(type) {
+            const vals = {
+                benign: { failed_logins: 0, session_duration: 30, access_hour: 14, device_trust_score: 95, MFA_bypassed: 0, external_connection: 0, privilege_change_attempted: 0 },
+                brute: { failed_logins: 15, session_duration: 5, access_hour: 2, device_trust_score: 20, MFA_bypassed: 0, external_connection: 1, privilege_change_attempted: 0 },
+                mfa: { failed_logins: 5, session_duration: 2, access_hour: 3, device_trust_score: 10, MFA_bypassed: 1, external_connection: 1, privilege_change_attempted: 1 },
+                sus: { failed_logins: 0, session_duration: 400, access_hour: 22, device_trust_score: 60, MFA_bypassed: 0, external_connection: 0, privilege_change_attempted: 1 },
+            };
+            const s = vals[type];
+            Object.keys(s).forEach(k => {
+                document.getElementById(k).value = s[k];
+                const display = document.getElementById('v-' + k);
+                if(display) {
+                    if(k === 'device_trust_score') display.innerText = (s[k]/100).toFixed(1);
+                    else display.innerText = s[k];
+                }
+            });
+            log(`Scenario applied: ${type}`);
+        }
+
+        async function evaluatePayload() {
+            const payload = {
+                failed_logins: parseInt(document.getElementById('failed_logins').value),
+                session_duration: parseFloat(document.getElementById('session_duration').value),
+                access_hour: parseInt(document.getElementById('access_hour').value),
+                device_trust_score: parseFloat(document.getElementById('device_trust_score').value) / 100,
+                MFA_bypassed: parseInt(document.getElementById('MFA_bypassed').value),
+                external_connection: parseInt(document.getElementById('external_connection').value),
+                privilege_change_attempted: parseInt(document.getElementById('privilege_change_attempted').value)
+            };
+
+            log(`Dispatching payload...`);
+            try {
+                const start = performance.now();
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                const end = performance.now();
+                
+                updateUI(data, (end - start).toFixed(0));
+            } catch(e) {
+                log(`Error: API unreachable. Is Docker running?`);
+            }
+        }
+
+        function updateUI(data, ms) {
+            const score = data.risk_score;
+            const scoreEl = document.getElementById('risk-score');
+            const levelEl = document.getElementById('risk-level');
+            const anomalyEl = document.getElementById('is-anomaly');
+            const rawEl = document.getElementById('raw-score');
+            const gauge = document.getElementById('gauge');
+
+            scoreEl.innerText = score;
+            rawEl.innerText = data.anomaly_score.toFixed(4);
+            anomalyEl.innerText = data.is_anomaly ? "YES" : "NO";
+            document.getElementById('anomaly-box').className = data.is_anomaly ? 'stat-box anomaly-yes' : 'stat-box anomaly-no';
+
+            let color = '#00e676';
+            let label = 'Low';
+            if (score >= 95) { color = '#ff1744'; label = 'Critical'; }
+            else if (score >= 75) { color = '#ff9100'; label = 'High'; }
+            else if (score >= 50) { color = '#ffea00'; label = 'Medium'; }
+
+            levelEl.innerText = label;
+            gauge.style.setProperty('--risk-color', color);
+            gauge.style.setProperty('--risk-rotate', `${(score / 100) * 360}deg`);
+            scoreEl.style.color = color;
+
+            log(`Result: ${label} Risk (${score}) | latency: ${ms}ms`);
+        }
+
+        function log(msg) {
+            const l = document.getElementById('log');
+            l.innerText = `> ${msg}\n` + l.innerText;
+        }
+    </script>
+</body>
+</html>
