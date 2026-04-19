@@ -100,6 +100,58 @@ def control():
     return jsonify({"ok": True, "action": action})
 
 
+# ── Event History API ─────────────────────────────────────────────────────────
+@app.route("/api/history")
+def history():
+    """Return the last N events stored in memory for the event log."""
+    limit = min(int(request.args.get("limit", 200)), 500)
+    with SIM.lock:
+        events = list(SIM.history[-limit:])
+    return jsonify({"events": events, "total": len(events)})
+
+
+# ── Replay / Re-evaluate API ──────────────────────────────────────────────────
+@app.route("/api/replay", methods=["POST"])
+def replay():
+    """
+    Re-run a modified feature set through UEBA + SOAR pipeline.
+    Body: { features: { failed_logins, privilege_change_attempted, ... } }
+    Returns: { ueba_output, soar, delta } where delta shows the change vs original.
+    """
+    from simulator import score_ueba, query_soar
+    body     = request.get_json(silent=True) or {}
+    features = body.get("features", {})
+    original = body.get("original_ueba", {})  # original scores for delta computation
+
+    # Cast inputs to correct types
+    cleaned = {
+        "failed_logins":              int(features.get("failed_logins", 0)),
+        "privilege_change_attempted": int(features.get("privilege_change_attempted", 0)),
+        "external_connection":        int(features.get("external_connection", 0)),
+        "MFA_bypassed":               int(features.get("MFA_bypassed", 0)),
+        "session_duration":           float(features.get("session_duration", 30.0)),
+        "access_hour":                int(features.get("access_hour", 14)),
+        "device_trust_score":         float(features.get("device_trust_score", 0.9)),
+    }
+
+    ueba_out = score_ueba(cleaned)
+    soar_out = query_soar(ueba_out["risk_score"], cleaned, ueba_out)
+
+    # Compute delta vs original
+    orig_risk = original.get("risk_score", ueba_out["risk_score"])
+    delta = {
+        "risk_change":    ueba_out["risk_score"] - orig_risk,
+        "anomaly_change": ueba_out["is_anomaly"] != original.get("is_anomaly", ueba_out["is_anomaly"]),
+    }
+
+    return jsonify({
+        "ueba_output": ueba_out,
+        "soar":        soar_out,
+        "delta":       delta,
+        "features_used": cleaned,
+    })
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     print("[*] Starting ZenGuard Live War Room on http://localhost:5002")

@@ -7,212 +7,155 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
 <style>
 :root{
-  --bg:#07090f; --surface:#0e1117; --card:#141820; --border:rgba(255,255,255,0.07);
-  --text:#e2e8f0; --muted:#64748b; --accent:#38bdf8;
-  --siem:#6366f1; --ueba:#f59e0b; --soar:#10b981;
-  --low:#22c55e; --med:#eab308; --high:#f97316; --crit:#ef4444;
+  --bg:#07090f;--surface:#0e1117;--card:#141820;--border:rgba(255,255,255,0.07);
+  --text:#e2e8f0;--muted:#64748b;--accent:#38bdf8;
+  --siem:#6366f1;--ueba:#f59e0b;--soar:#10b981;
+  --low:#22c55e;--med:#eab308;--high:#f97316;--crit:#ef4444;
 }
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Outfit',sans-serif;}
 body{background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
 
 /* ── Top bar ── */
-.topbar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border);
-  position:sticky;top:0;z-index:100;
-}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;
+  background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;}
 .logo{display:flex;align-items:center;gap:10px;}
-.logo-dot{width:10px;height:10px;border-radius:50%;background:#ef4444;
-  animation:pulse-dot 1.2s ease-in-out infinite;}
-@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.7);}
-  50%{box-shadow:0 0 0 6px rgba(239,68,68,0);}}
+.logo-dot{width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pulse-dot 1.2s ease-in-out infinite;}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.7);}50%{box-shadow:0 0 0 6px rgba(239,68,68,0);}}
 .logo h1{font-size:1.2rem;font-weight:700;letter-spacing:1px;
-  background:linear-gradient(135deg,#38bdf8,#818cf8);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.scenario-badge{
-  background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);
-  color:#a5b4fc;padding:6px 14px;border-radius:30px;font-size:0.8rem;font-weight:600;
-}
+  background:linear-gradient(135deg,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.scenario-badge{background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);
+  color:#a5b4fc;padding:6px 14px;border-radius:30px;font-size:0.8rem;font-weight:600;}
 .controls{display:flex;gap:8px;align-items:center;}
-.btn{
-  border:none;border-radius:8px;padding:7px 14px;font-size:0.82rem;
-  font-weight:600;cursor:pointer;transition:all 0.2s;
-}
+.btn{border:none;border-radius:8px;padding:7px 14px;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
 .btn-pause{background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);}
 .btn-pause:hover{background:rgba(251,191,36,0.25);}
 .btn-fast{background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);}
 .btn-fast:hover{background:rgba(56,189,248,0.25);}
 
 /* ── KPI strip ── */
-.kpis{
-  display:grid;grid-template-columns:repeat(5,1fr);gap:1px;
-  background:var(--border);border-bottom:1px solid var(--border);
-}
-.kpi{
-  background:var(--surface);padding:14px 20px;text-align:center;
-}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border);}
+.kpi{background:var(--surface);padding:14px 20px;text-align:center;}
 .kpi-val{font-size:1.6rem;font-weight:700;line-height:1;font-family:'JetBrains Mono',monospace;}
 .kpi-lbl{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
-.kpi-val.c-events{color:#38bdf8;}
-.kpi-val.c-attacks{color:#ef4444;}
-.kpi-val.c-benign{color:#22c55e;}
-.kpi-val.c-soar{color:#10b981;}
-.kpi-val.c-risk{color:#f97316;}
+.kpi-val.c-events{color:#38bdf8;}.kpi-val.c-attacks{color:#ef4444;}.kpi-val.c-benign{color:#22c55e;}
+.kpi-val.c-soar{color:#10b981;}.kpi-val.c-risk{color:#f97316;}
 
-/* ── Main 3-column pipeline view ── */
-.pipeline{
-  display:grid;grid-template-columns:1fr 20px 1fr 20px 1fr;
-  gap:0;padding:16px 20px;min-height:0;
-}
-.arrow{
-  display:flex;align-items:center;justify-content:center;
-  color:var(--muted);font-size:1.4rem;padding-top:40px;
-}
+/* ── Main layout: pipeline + optional drawer ── */
+.main-wrap{display:flex;min-height:0;}
+.pipeline-wrap{flex:1;min-width:0;}
+.pipeline{display:grid;grid-template-columns:1fr 20px 1fr 20px 1fr;gap:0;padding:16px 20px;}
+.pipeline-arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:50px;gap:4px;}
+.flow-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:flow-anim 2s ease-in-out infinite;opacity:0;}
+@keyframes flow-anim{0%{opacity:0;transform:translateY(-20px);}50%{opacity:1;}100%{opacity:0;transform:translateY(20px);}}
+.arrow-head{color:var(--accent);font-size:1rem;opacity:0.6;}
 
+/* ── Stage cards ── */
 .stage{display:flex;flex-direction:column;gap:10px;}
-.stage-header{
-  display:flex;align-items:center;gap:10px;padding:10px 16px;
-  border-radius:10px 10px 0 0;font-weight:700;font-size:0.9rem;letter-spacing:0.5px;
-}
-.stage-header .num{
-  width:24px;height:24px;border-radius:6px;display:flex;align-items:center;
-  justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;
-}
-
+.stage-header{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px 10px 0 0;font-weight:700;font-size:0.9rem;letter-spacing:0.5px;}
+.stage-header .num{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;}
 .siem-hdr{background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);}
-.siem-hdr .num{background:rgba(99,102,241,0.3);color:#a5b4fc;}
-.siem-hdr span{color:#a5b4fc;}
-
+.siem-hdr .num{background:rgba(99,102,241,0.3);color:#a5b4fc;}.siem-hdr span{color:#a5b4fc;}
 .ueba-hdr{background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);}
-.ueba-hdr .num{background:rgba(245,158,11,0.3);color:#fde68a;}
-.ueba-hdr span{color:#fde68a;}
-
+.ueba-hdr .num{background:rgba(245,158,11,0.3);color:#fde68a;}.ueba-hdr span{color:#fde68a;}
 .soar-hdr{background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);}
-.soar-hdr .num{background:rgba(16,185,129,0.3);color:#6ee7b7;}
-.soar-hdr span{color:#6ee7b7;}
-
-.stage-card{
-  background:var(--card);border:1px solid var(--border);border-radius:0 0 10px 10px;
-  padding:14px;display:flex;flex-direction:column;gap:12px;
-  min-height:440px;
-}
-
-/* Section labels */
-.section-lbl{
-  font-size:0.68rem;text-transform:uppercase;letter-spacing:1.5px;
-  color:var(--muted);padding-bottom:4px;border-bottom:1px solid var(--border);
-  margin-bottom:2px;
-}
-
-/* Feature rows */
-.feat-row{
-  display:flex;align-items:center;gap:8px;font-size:0.82rem;
-}
+.soar-hdr .num{background:rgba(16,185,129,0.3);color:#6ee7b7;}.soar-hdr span{color:#6ee7b7;}
+.stage-card{background:var(--card);border:1px solid var(--border);border-radius:0 0 10px 10px;padding:14px;display:flex;flex-direction:column;gap:12px;min-height:440px;}
+.section-lbl{font-size:0.68rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding-bottom:4px;border-bottom:1px solid var(--border);margin-bottom:2px;}
+.feat-row{display:flex;align-items:center;gap:8px;font-size:0.82rem;}
 .feat-row .feat-name{color:var(--muted);min-width:140px;flex-shrink:0;}
 .feat-bar-wrap{flex:1;background:rgba(255,255,255,0.04);border-radius:4px;height:6px;overflow:hidden;}
 .feat-bar{height:100%;border-radius:4px;transition:width 0.4s ease;}
 .feat-val{min-width:48px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:0.78rem;}
-
-/* Risk gauge */
-.risk-block{
-  display:flex;align-items:center;gap:16px;padding:12px;
-  border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,0.2);
-}
-.risk-score-big{font-size:2.8rem;font-weight:700;line-height:1;
-  font-family:'JetBrains Mono',monospace;transition:color 0.4s;}
+.risk-block{display:flex;align-items:center;gap:16px;padding:12px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,0.2);}
+.risk-score-big{font-size:2.8rem;font-weight:700;line-height:1;font-family:'JetBrains Mono',monospace;transition:color 0.4s;}
 .risk-meta{display:flex;flex-direction:column;gap:4px;}
-.risk-badge{
-  display:inline-block;padding:3px 10px;border-radius:20px;
-  font-size:0.72rem;font-weight:700;letter-spacing:1px;
-}
+.risk-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:1px;}
 .anomaly-tag{font-size:0.72rem;color:var(--muted);}
-
-/* SOAR action card */
-.soar-card{
-  border-radius:8px;padding:12px;border-left:3px solid #10b981;
-  background:rgba(16,185,129,0.08);
-}
+.soar-card{border-radius:8px;padding:12px;border-left:3px solid #10b981;background:rgba(16,185,129,0.08);}
 .soar-action-name{font-size:1rem;font-weight:700;color:#6ee7b7;margin-bottom:6px;}
 .soar-explain{font-size:0.82rem;color:#94a3b8;line-height:1.5;}
-.soar-state-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
-.state-tag{
-  font-size:0.68rem;padding:2px 8px;border-radius:20px;
-  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
-  font-family:'JetBrains Mono',monospace;
-}
-
-/* SIEM raw features */
-.siem-field{display:flex;justify-content:space-between;padding:4px 0;
-  border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.82rem;}
-.siem-field:last-child{border:none;}
-.siem-field .k{color:var(--muted);}
-.siem-field .v{font-family:'JetBrains Mono',monospace;color:#c7d2fe;}
-
-/* SIEM verdict */
-.siem-verdict{
-  padding:8px 12px;border-radius:8px;font-weight:700;font-size:0.88rem;
-  text-align:center;letter-spacing:0.5px;margin-top:4px;
-}
+.siem-field{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.82rem;}
+.siem-field:last-child{border:none;}.siem-field .k{color:var(--muted);}.siem-field .v{font-family:'JetBrains Mono',monospace;color:#c7d2fe;}
+.siem-verdict{padding:8px 12px;border-radius:8px;font-weight:700;font-size:0.88rem;text-align:center;letter-spacing:0.5px;margin-top:4px;}
 .verdict-attack{background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);}
 .verdict-benign{background:rgba(34,197,94,0.1);color:#86efac;border:1px solid rgba(34,197,94,0.2);}
 
-/* ── Live event log ── */
-.log-section{
-  border-top:1px solid var(--border);padding:12px 20px;
-  display:flex;flex-direction:column;gap:8px;
-}
+/* ── Log section ── */
+.log-section{border-top:1px solid var(--border);padding:12px 20px;display:flex;flex-direction:column;gap:8px;}
 .log-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);}
 .log-table-wrap{max-height:180px;overflow-y:auto;}
 .log-table{width:100%;border-collapse:collapse;font-size:0.78rem;}
-.log-table th{
-  position:sticky;top:0;background:var(--surface);
-  color:var(--muted);font-weight:600;text-align:left;padding:6px 10px;
-  font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;
-}
+.log-table th{position:sticky;top:0;background:var(--surface);color:var(--muted);font-weight:600;text-align:left;padding:6px 10px;font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;}
 .log-table td{padding:5px 10px;border-bottom:1px solid var(--border);}
-.log-table tr:hover td{background:rgba(255,255,255,0.02);}
+.log-table tr.log-row{cursor:pointer;transition:background 0.15s;}
+.log-table tr.log-row:hover td{background:rgba(56,189,248,0.06);}
+.log-table tr.log-row.selected td{background:rgba(56,189,248,0.1);border-left:2px solid var(--accent);}
 .log-table tr.new-row td{animation:row-flash 0.7s ease;}
 @keyframes row-flash{from{background:rgba(56,189,248,0.15);}to{background:transparent;}}
+.risk-low{color:var(--low);}.risk-med{color:var(--med);}.risk-high{color:var(--high);}.risk-crit{color:var(--crit);}
 
-/* Risk color helpers */
-.risk-low{color:var(--low);}
-.risk-med{color:var(--med);}
-.risk-high{color:var(--high);}
-.risk-crit{color:var(--crit);}
-.bg-low{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.25);}
-.bg-med{background:rgba(234,179,8,0.12);border-color:rgba(234,179,8,0.25);}
-.bg-high{background:rgba(249,115,22,0.12);border-color:rgba(249,115,22,0.25);}
-.bg-crit{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.25);}
+/* ── Event Detail Drawer ── */
+.drawer{
+  width:0;overflow:hidden;transition:width 0.35s cubic-bezier(0.4,0,0.2,1);
+  background:var(--surface);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;
+  position:sticky;top:52px;height:calc(100vh - 52px);
+}
+.drawer.open{width:420px;}
+.drawer-inner{width:420px;height:100%;overflow-y:auto;padding:18px;}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.drawer-title{font-size:1rem;font-weight:700;color:#fff;}
+.drawer-close{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px;border-radius:6px;}
+.drawer-close:hover{background:rgba(255,255,255,0.08);color:#fff;}
+
+/* Drawer tabs */
+.dtabs{display:flex;gap:6px;margin-bottom:16px;}
+.dtab{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:0.8rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all 0.2s;}
+.dtab.active{color:#fff;border-color:var(--accent);background:rgba(56,189,248,0.1);}
+.dtab-content{display:none;}.dtab-content.active{display:block;}
+
+/* Drawer field */
+.dfield{margin-bottom:12px;}
+.dfield label{display:block;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;}
+.dfield-val{font-family:'JetBrains Mono',monospace;font-size:0.88rem;color:#e2e8f0;}
+.dfield input[type=number], .dfield select{
+  width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);
+  border-radius:8px;color:#fff;padding:8px 12px;font-size:0.88rem;outline:none;transition:border-color 0.2s;
+  font-family:'JetBrains Mono',monospace;
+}
+.dfield input[type=number]:focus,.dfield select:focus{border-color:var(--accent);}
+.dfield .slider-wrap{display:flex;align-items:center;gap:10px;}
+.dfield .slider-wrap input[type=range]{flex:1;}
+.dfield .slider-wrap span{min-width:40px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:0.82rem;}
+
+/* Replay result */
+.replay-result{margin-top:16px;border-radius:10px;padding:14px;border:1px solid var(--border);background:var(--card);}
+.replay-result h4{font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;}
+.delta-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.delta-up{background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);}
+.delta-down{background:rgba(34,197,94,0.15);color:#86efac;border:1px solid rgba(34,197,94,0.3);}
+.delta-same{background:rgba(148,163,184,0.1);color:#94a3b8;border:1px solid rgba(148,163,184,0.2);}
+
+.btn-replay{
+  width:100%;margin-top:12px;background:linear-gradient(135deg,var(--accent),#818cf8);
+  border:none;border-radius:10px;padding:12px;font-weight:700;font-size:0.92rem;
+  color:#000;cursor:pointer;transition:all 0.25s;
+}
+.btn-replay:hover{opacity:0.85;transform:translateY(-1px);}
+.btn-replay:disabled{opacity:0.4;transform:none;cursor:not-allowed;}
 
 /* Scrollbar */
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px;}
-
-/* Pipeline separator */
-.pipeline-arrow{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding-top:50px;gap:4px;
-}
-.arrow-line{width:2px;height:30px;background:linear-gradient(to bottom,var(--border),var(--accent));opacity:0.5;}
-.arrow-head{color:var(--accent);font-size:1rem;opacity:0.6;}
-.flow-dot{
-  width:8px;height:8px;border-radius:50%;background:var(--accent);
-  animation:flow-anim 2s ease-in-out infinite;opacity:0;
-}
-@keyframes flow-anim{
-  0%{opacity:0;transform:translateY(-20px);}
-  50%{opacity:1;}
-  100%{opacity:0;transform:translateY(20px);}
-}
-
-/* Empty state */
-.empty-state{color:var(--muted);font-size:0.85rem;text-align:center;padding:40px 0;opacity:0.5;}
+input[type=range]{-webkit-appearance:none;width:100%;background:transparent;}
+input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:rgba(255,255,255,0.1);border-radius:2px;}
+input[type=range]::-webkit-slider-thumb{height:14px;width:14px;border-radius:50%;background:var(--accent);cursor:pointer;-webkit-appearance:none;margin-top:-5px;box-shadow:0 0 8px rgba(56,189,248,0.5);}
 </style>
 </head>
 <body>
 
-<!-- ── Top Bar ─────────────────────────────────────────────────────────── -->
+<!-- ── Top Bar ── -->
 <div class="topbar">
   <div class="logo">
     <div class="logo-dot"></div>
@@ -221,7 +164,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
   </div>
   <div class="scenario-badge" id="scenario-badge">Initializing…</div>
   <div class="controls">
-    <span style="font-size:0.78rem;color:var(--muted);margin-right:6px;">Speed:</span>
+    <span style="font-size:0.78rem;color:var(--muted);">Speed:</span>
     <button class="btn btn-fast" onclick="setSpeed(1)">1×</button>
     <button class="btn btn-fast" onclick="setSpeed(3)">3×</button>
     <button class="btn btn-fast" onclick="setSpeed(5)">5×</button>
@@ -229,7 +172,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
   </div>
 </div>
 
-<!-- ── KPI Strip ───────────────────────────────────────────────────────── -->
+<!-- ── KPI Strip ── -->
 <div class="kpis">
   <div class="kpi"><div class="kpi-val c-events" id="kpi-events">0</div><div class="kpi-lbl">Events Processed</div></div>
   <div class="kpi"><div class="kpi-val c-attacks" id="kpi-attacks">0</div><div class="kpi-lbl">Attacks Detected</div></div>
@@ -238,327 +181,405 @@ body{background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
   <div class="kpi"><div class="kpi-val c-risk" id="kpi-risk">--</div><div class="kpi-lbl">Last Risk Score</div></div>
 </div>
 
-<!-- ── Pipeline View ────────────────────────────────────────────────────── -->
-<div class="pipeline">
-
-  <!-- STAGE 1: SIEM -->
-  <div class="stage">
-    <div class="stage-header siem-hdr">
-      <div class="num">1</div>
-      <span>SIEM — Ingestion &amp; Classification</span>
-    </div>
-    <div class="stage-card">
-      <div>
-        <div class="section-lbl">Raw Network Flow Input (CICIDS2017)</div>
-        <div id="siem-fields">
-          <div class="empty-state">Awaiting first event…</div>
+<!-- ── Main layout ── -->
+<div class="main-wrap">
+  <div class="pipeline-wrap">
+    <!-- Pipeline -->
+    <div class="pipeline">
+      <!-- SIEM -->
+      <div class="stage">
+        <div class="stage-header siem-hdr"><div class="num">1</div><span>SIEM — Ingestion &amp; Classification</span></div>
+        <div class="stage-card">
+          <div><div class="section-lbl">Raw Network Flow Input (CICIDS2017)</div><div id="siem-fields"><div style="color:var(--muted);text-align:center;padding:30px 0;font-size:0.85rem;opacity:0.5;">Awaiting…</div></div></div>
+          <div><div class="section-lbl">SIEM Verdict</div><div id="siem-verdict" class="siem-verdict verdict-benign">— BENIGN —</div></div>
+          <div><div class="section-lbl">Attack Category</div><div id="siem-category" style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:#c7d2fe;padding:4px 0;">—</div></div>
         </div>
       </div>
-      <div>
-        <div class="section-lbl">SIEM Verdict</div>
-        <div id="siem-verdict" class="siem-verdict verdict-benign">— BENIGN —</div>
-      </div>
-      <div>
-        <div class="section-lbl">Attack Category</div>
-        <div id="siem-category" style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:#c7d2fe;padding:4px 0;">—</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Arrow 1→2 -->
-  <div class="pipeline-arrow">
-    <div class="flow-dot" style="animation-delay:0s;"></div>
-    <div class="flow-dot" style="animation-delay:0.7s;"></div>
-    <div class="arrow-head">›</div>
-  </div>
-
-  <!-- STAGE 2: UEBA -->
-  <div class="stage">
-    <div class="stage-header ueba-hdr">
-      <div class="num">2</div>
-      <span>UEBA — Isolation Forest Scoring</span>
-    </div>
-    <div class="stage-card">
-      <div>
-        <div class="section-lbl">7-Feature Input Vector</div>
-        <div id="ueba-features">
-          <div class="empty-state">Awaiting UEBA input…</div>
+      <!-- Arrow -->
+      <div class="pipeline-arrow"><div class="flow-dot" style="animation-delay:0s;"></div><div class="flow-dot" style="animation-delay:0.7s;"></div><div class="arrow-head">›</div></div>
+      <!-- UEBA -->
+      <div class="stage">
+        <div class="stage-header ueba-hdr"><div class="num">2</div><span>UEBA — Isolation Forest Scoring</span></div>
+        <div class="stage-card">
+          <div><div class="section-lbl">7-Feature Input Vector</div><div id="ueba-features"><div style="color:var(--muted);text-align:center;padding:30px 0;font-size:0.85rem;opacity:0.5;">Awaiting…</div></div></div>
+          <div><div class="section-lbl">Model Output</div>
+            <div class="risk-block" id="risk-block">
+              <div class="risk-score-big" id="risk-num" style="color:var(--muted)">--</div>
+              <div class="risk-meta">
+                <div class="risk-badge" id="risk-band-badge">—</div>
+                <div class="anomaly-tag" id="anomaly-tag">anomaly: —</div>
+                <div class="anomaly-tag" id="raw-score-tag">raw: —</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div>
-        <div class="section-lbl">Model Output</div>
-        <div class="risk-block" id="risk-block">
-          <div class="risk-score-big" id="risk-num" style="color:var(--muted)">--</div>
-          <div class="risk-meta">
-            <div class="risk-badge" id="risk-band-badge">—</div>
-            <div class="anomaly-tag" id="anomaly-tag">anomaly: —</div>
-            <div class="anomaly-tag" id="raw-score-tag">raw: —</div>
+      <!-- Arrow -->
+      <div class="pipeline-arrow"><div class="flow-dot" style="animation-delay:0.3s;"></div><div class="flow-dot" style="animation-delay:1s;"></div><div class="arrow-head">›</div></div>
+      <!-- SOAR -->
+      <div class="stage">
+        <div class="stage-header soar-hdr"><div class="num">3</div><span>SOAR — RL Agent Decision</span></div>
+        <div class="stage-card">
+          <div><div class="section-lbl">Input Context to RL Agent</div><div id="soar-inputs"><div style="color:var(--muted);text-align:center;padding:30px 0;font-size:0.85rem;opacity:0.5;">Awaiting…</div></div></div>
+          <div><div class="section-lbl">Agent Decision</div>
+            <div class="soar-card" id="soar-card">
+              <div class="soar-action-name" id="soar-action">—</div>
+              <div class="soar-explain" id="soar-explain">—</div>
+            </div>
+          </div>
+          <div style="font-size:0.72rem;color:var(--muted);padding:4px;text-align:center;">
+            🔧 SOAR engine: <span style="color:#6ee7b7;font-family:'JetBrains Mono',monospace;">in-process Q-table (rl_agent.py)</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Arrow 2→3 -->
-  <div class="pipeline-arrow">
-    <div class="flow-dot" style="animation-delay:0.3s;"></div>
-    <div class="flow-dot" style="animation-delay:1s;"></div>
-    <div class="arrow-head">›</div>
-  </div>
-
-  <!-- STAGE 3: SOAR -->
-  <div class="stage">
-    <div class="stage-header soar-hdr">
-      <div class="num">3</div>
-      <span>SOAR — RL Agent Decision</span>
-    </div>
-    <div class="stage-card">
-      <div>
-        <div class="section-lbl">Input Context to RL Agent</div>
-        <div id="soar-inputs">
-          <div class="empty-state">Awaiting SOAR context…</div>
-        </div>
+    <!-- Log -->
+    <div class="log-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="log-title">Live Event Feed — Click any row to inspect &amp; edit</div>
+        <span style="font-size:0.72rem;color:var(--muted);" id="log-count">0 events</span>
       </div>
-      <div>
-        <div class="section-lbl">Agent Decision</div>
-        <div class="soar-card" id="soar-card">
-          <div class="soar-action-name" id="soar-action">—</div>
-          <div class="soar-explain" id="soar-explain">—</div>
-          <div class="soar-state-tags" id="soar-state-tags"></div>
-        </div>
+      <div class="log-table-wrap">
+        <table class="log-table">
+          <thead><tr>
+            <th>#</th><th>Scenario</th><th>SIEM Label</th>
+            <th>Risk Score</th><th>Anomaly</th><th>SOAR Action</th><th>⚙</th>
+          </tr></thead>
+          <tbody id="log-body"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
-</div><!-- /pipeline -->
+  <!-- ── Drawer ── -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-inner">
+      <div class="drawer-header">
+        <div class="drawer-title">🔍 Event Inspector</div>
+        <button class="drawer-close" onclick="closeDrawer()">✕</button>
+      </div>
 
-<!-- ── Live Event Log ──────────────────────────────────────────────────── -->
-<div class="log-section">
-  <div class="log-title">Live Event Feed — Last 100 Events</div>
-  <div class="log-table-wrap">
-    <table class="log-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Scenario</th>
-          <th>SIEM Label</th>
-          <th>Risk Score</th>
-          <th>Anomaly</th>
-          <th>SOAR Action</th>
-        </tr>
-      </thead>
-      <tbody id="log-body"></tbody>
-    </table>
+      <!-- Tabs -->
+      <div class="dtabs">
+        <button class="dtab active" onclick="switchTab('tab-siem',this)">SIEM</button>
+        <button class="dtab" onclick="switchTab('tab-ueba',this)">UEBA</button>
+        <button class="dtab" onclick="switchTab('tab-soar',this)">SOAR</button>
+        <button class="dtab" onclick="switchTab('tab-edit',this)">✏ Edit &amp; Replay</button>
+      </div>
+
+      <!-- SIEM Tab -->
+      <div class="dtab-content active" id="tab-siem">
+        <div id="d-siem-content"></div>
+      </div>
+
+      <!-- UEBA Tab -->
+      <div class="dtab-content" id="tab-ueba">
+        <div id="d-ueba-content"></div>
+      </div>
+
+      <!-- SOAR Tab -->
+      <div class="dtab-content" id="tab-soar">
+        <div id="d-soar-content"></div>
+      </div>
+
+      <!-- Edit & Replay Tab -->
+      <div class="dtab-content" id="tab-edit">
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:14px;">
+          Modify any UEBA feature below and click <strong style="color:#38bdf8;">Re-Evaluate</strong> to see how the risk score and SOAR decision change.
+        </p>
+        <div id="edit-fields"></div>
+        <button class="btn-replay" id="replay-btn" onclick="doReplay()">⚡ Re-Evaluate Pipeline</button>
+        <div id="replay-result"></div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
-let paused = false;
-let totalEvents = 0, totalAttacks = 0, totalBenign = 0, totalSoar = 0;
-const MAX_LOG = 100;
+let paused=false, totalEvents=0, totalAttacks=0, totalBenign=0, totalSoar=0;
+const MAX_LOG=200, eventMap={};  // id → full envelope
+let selectedId=null;
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-function riskColor(s){
-  if(s >= 95) return 'var(--crit)';
-  if(s >= 75) return 'var(--high)';
-  if(s >= 50) return 'var(--med)';
-  return 'var(--low)';
-}
-function riskLabel(s){
-  if(s>=95)return'CRITICAL';if(s>=75)return'HIGH';if(s>=50)return'MEDIUM';return'LOW';
-}
-function riskClass(s){
-  if(s >= 95) return 'risk-crit';
-  if(s >= 75) return 'risk-high';
-  if(s >= 50) return 'risk-med';
-  return 'risk-low';
-}
-function riskBg(s){
-  if(s >= 95) return 'bg-crit';
-  if(s >= 75) return 'bg-high';
-  if(s >= 50) return 'bg-med';
-  return 'bg-low';
-}
+// ── Color helpers ──────────────────────────────────────────────────────────
+function riskColor(s){return s>=95?'var(--crit)':s>=75?'var(--high)':s>=50?'var(--med)':'var(--low)';}
+function riskLabel(s){return s>=95?'CRITICAL':s>=75?'HIGH':s>=50?'MEDIUM':'LOW';}
+function riskClass(s){return s>=95?'risk-crit':s>=75?'risk-high':s>=50?'risk-med':'risk-low';}
+function featBar(val,max,color){const p=Math.min(100,(val/max)*100);
+  return `<div class="feat-bar-wrap"><div class="feat-bar" style="width:${p}%;background:${color};"></div></div>`;}
 
-function featBar(val, max, color){
-  const pct = Math.min(100, (val/max)*100);
-  return `<div class="feat-bar-wrap"><div class="feat-bar" style="width:${pct}%;background:${color};"></div></div>`;
-}
-
-// ── Render SIEM panel ─────────────────────────────────────────────────────
-function renderSIEM(siem){
-  const f = (k,v) => `<div class="siem-field"><span class="k">${k}</span><span class="v">${v}</span></div>`;
-  document.getElementById('siem-fields').innerHTML = [
-    f('Destination Port', siem.dst_port),
-    f('Flow Duration (ms)', siem.flow_dur_ms?.toLocaleString()),
-    f('Fwd Packets', siem.fwd_pkts),
-    f('Bwd Packets', siem.bwd_pkts),
-    f('Flow Bytes/s', siem.flow_bytes_s?.toLocaleString()),
-    f('SYN Flags', siem.syn_flags),
-    f('RST Flags', siem.rst_flags),
-    f('Pkt Length Variance', siem.pkt_len_var),
-  ].join('');
-
-  const verdict = document.getElementById('siem-verdict');
-  const isAtk   = siem.label?.trim().toUpperCase() !== 'BENIGN';
-  verdict.className = `siem-verdict ${isAtk ? 'verdict-attack' : 'verdict-benign'}`;
-  verdict.textContent = isAtk ? `⚠ ATTACK DETECTED` : '✓ BENIGN TRAFFIC';
-
-  document.getElementById('siem-category').textContent = siem.label || '—';
-}
-
-// ── Render UEBA panel ─────────────────────────────────────────────────────
-const UEBA_FEATURES = [
-  {key:'failed_logins',          label:'Failed Logins',         max:20,  color:'#f87171'},
-  {key:'privilege_change_attempted', label:'Privilege Change',  max:1,   color:'#fb923c'},
-  {key:'external_connection',    label:'External Connection',   max:1,   color:'#facc15'},
-  {key:'MFA_bypassed',           label:'MFA Bypassed',          max:1,   color:'#ef4444'},
-  {key:'session_duration',       label:'Session Duration (m)',  max:1440,color:'#60a5fa'},
-  {key:'access_hour',            label:'Access Hour',           max:23,  color:'#a78bfa'},
-  {key:'device_trust_score',     label:'Device Trust Score',    max:1,   color:'#34d399'},
+const FEATS=[
+  {key:'failed_logins',          label:'Failed Logins',       max:20,  color:'#f87171', type:'int',  min:0, step:1},
+  {key:'privilege_change_attempted',label:'Privilege Change', max:1,   color:'#fb923c', type:'bool'},
+  {key:'external_connection',    label:'External Connection', max:1,   color:'#facc15', type:'bool'},
+  {key:'MFA_bypassed',           label:'MFA Bypassed',        max:1,   color:'#ef4444', type:'bool'},
+  {key:'session_duration',       label:'Session Duration (m)',max:1440,color:'#60a5fa', type:'float',min:0,step:1},
+  {key:'access_hour',            label:'Access Hour (0-23)',  max:23,  color:'#a78bfa', type:'int',  min:0, step:1},
+  {key:'device_trust_score',     label:'Device Trust Score',  max:1,   color:'#34d399', type:'float',min:0,step:0.01},
 ];
 
-function renderUEBA(inp, out){
-  const rows = UEBA_FEATURES.map(f => {
-    const val = inp[f.key] ?? 0;
-    const disp = typeof val === 'number' ? (val % 1 !== 0 ? val.toFixed(3) : val) : val;
-    return `<div class="feat-row">
-      <span class="feat-name">${f.label}</span>
-      ${featBar(val, f.max, f.color)}
-      <span class="feat-val" style="color:${f.color}">${disp}</span>
-    </div>`;
-  }).join('');
-  document.getElementById('ueba-features').innerHTML = rows;
-
-  const score = out.risk_score ?? 0;
-  const num   = document.getElementById('risk-num');
-  num.textContent = score;
-  num.style.color = riskColor(score);
-
-  const badge = document.getElementById('risk-band-badge');
-  badge.textContent = riskLabel(score);
-  // remove old bg classes
-  badge.className = 'risk-badge';
-  badge.style.background = riskColor(score) + '20';
-  badge.style.color       = riskColor(score);
-  badge.style.border      = `1px solid ${riskColor(score)}40`;
-
-  document.getElementById('anomaly-tag').textContent = `anomaly: ${out.is_anomaly ? '⚠ YES' : '✓ NO'}`;
-  document.getElementById('anomaly-tag').style.color = out.is_anomaly ? 'var(--crit)' : 'var(--low)';
-  document.getElementById('raw-score-tag').textContent = `raw IF score: ${out.raw_score}`;
+// ── Render pipeline panels ─────────────────────────────────────────────────
+function renderSIEM(siem){
+  const f=(k,v)=>`<div class="siem-field"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  document.getElementById('siem-fields').innerHTML=[
+    f('Destination Port',siem.dst_port),f('Flow Duration (ms)',siem.flow_dur_ms?.toLocaleString()),
+    f('Fwd Packets',siem.fwd_pkts),f('Bwd Packets',siem.bwd_pkts),
+    f('Flow Bytes/s',siem.flow_bytes_s?.toLocaleString()),f('SYN Flags',siem.syn_flags),
+    f('RST Flags',siem.rst_flags),f('Pkt Len Variance',siem.pkt_len_var),
+  ].join('');
+  const v=document.getElementById('siem-verdict'), isAtk=siem.label?.trim().toUpperCase()!=='BENIGN';
+  v.className=`siem-verdict ${isAtk?'verdict-attack':'verdict-benign'}`;
+  v.textContent=isAtk?'⚠ ATTACK DETECTED':'✓ BENIGN TRAFFIC';
+  document.getElementById('siem-category').textContent=siem.label||'—';
 }
-
-// ── Render SOAR panel ─────────────────────────────────────────────────────
-function renderSOAR(soar, risk){
-  // Input context
-  const st = soar.state ?? {};
-  const bandNames = ['LOW (0-49)','MEDIUM (50-74)','HIGH (75-94)','CRITICAL (95-100)'];
-  document.getElementById('soar-inputs').innerHTML = `
-    <div class="feat-row" style="margin-bottom:6px;">
-      <span class="feat-name">Risk Score</span>
-      ${featBar(risk, 100, riskColor(risk))}
+function renderUEBA(inp,out){
+  document.getElementById('ueba-features').innerHTML=FEATS.map(f=>{
+    const val=inp[f.key]??0, disp=typeof val==='number'?(val%1!==0?val.toFixed(3):val):val;
+    return `<div class="feat-row"><span class="feat-name">${f.label}</span>${featBar(val,f.max,f.color)}<span class="feat-val" style="color:${f.color}">${disp}</span></div>`;
+  }).join('');
+  const score=out.risk_score??0, num=document.getElementById('risk-num');
+  num.textContent=score; num.style.color=riskColor(score);
+  const badge=document.getElementById('risk-band-badge');
+  badge.textContent=riskLabel(score); badge.className='risk-badge';
+  badge.style.cssText=`background:${riskColor(score)}20;color:${riskColor(score)};border:1px solid ${riskColor(score)}40;`;
+  const at=document.getElementById('anomaly-tag');
+  at.textContent=`anomaly: ${out.is_anomaly?'⚠ YES':'✓ NO'}`;
+  at.style.color=out.is_anomaly?'var(--crit)':'var(--low)';
+  document.getElementById('raw-score-tag').textContent=`raw IF score: ${out.raw_score}`;
+}
+function renderSOAR(soar,risk){
+  const st=soar.state??{};
+  const bands=['LOW (0-49)','MEDIUM (50-74)','HIGH (75-94)','CRITICAL (95-100)'];
+  document.getElementById('soar-inputs').innerHTML=`
+    <div class="feat-row" style="margin-bottom:8px;">
+      <span class="feat-name">Risk Score</span>${featBar(risk,100,riskColor(risk))}
       <span class="feat-val ${riskClass(risk)}">${risk}</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
       <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;padding:8px;">
         <div style="font-size:0.68rem;color:var(--muted);margin-bottom:2px;">Risk Band</div>
-        <div style="font-size:0.82rem;font-family:'JetBrains Mono',monospace;color:${riskColor(risk)}">${bandNames[st.risk_band ?? 0]}</div>
+        <div style="font-size:0.82rem;font-family:'JetBrains Mono',monospace;color:${riskColor(risk)}">${bands[st.risk_band??0]}</div>
       </div>
       <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;padding:8px;">
         <div style="font-size:0.68rem;color:var(--muted);margin-bottom:2px;">MFA Bypassed</div>
-        <div style="font-size:0.82rem;font-family:'JetBrains Mono',monospace;color:${st.mfa_bypassed?'var(--crit)':'var(--low)'}">${st.mfa_bypassed ? '⚠ YES' : '✓ NO'}</div>
+        <div style="font-size:0.82rem;font-family:'JetBrains Mono',monospace;color:${st.mfa_bypassed?'var(--crit)':'var(--low)'}">${st.mfa_bypassed?'⚠ YES':'✓ NO'}</div>
       </div>
       <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;padding:8px;">
         <div style="font-size:0.68rem;color:var(--muted);margin-bottom:2px;">Anomaly Flag</div>
-        <div style="font-size:0.82rem;font-family:'JetBrains Mono',monospace;color:${st.anomaly_flag?'var(--crit)':'var(--low)'}">${st.anomaly_flag ? '⚠ YES' : '✓ NO'}</div>
+        <div style="font-size:0.82rem;font-family:'JetBrains Mono',monospace;color:${st.anomaly_flag?'var(--crit)':'var(--low)'}">${st.anomaly_flag?'⚠ YES':'✓ NO'}</div>
       </div>
       <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;padding:8px;">
         <div style="font-size:0.68rem;color:var(--muted);margin-bottom:2px;">Action ID</div>
         <div style="font-size:0.82rem;font-family:'JetBrains Mono',monospace;color:#6ee7b7">#${soar.action_id}</div>
       </div>
     </div>`;
-
-  document.getElementById('soar-action').textContent = soar.action;
-  document.getElementById('soar-explain').textContent = soar.explanation;
+  document.getElementById('soar-action').textContent=soar.action;
+  document.getElementById('soar-explain').textContent=soar.explanation;
 }
 
-// ── Append to log table ───────────────────────────────────────────────────
+// ── Log table ──────────────────────────────────────────────────────────────
 function appendLog(env){
-  const tbody = document.getElementById('log-body');
-  const score = env.ueba_output?.risk_score ?? 0;
-  const tr = document.createElement('tr');
-  tr.className = 'new-row';
-  tr.innerHTML = `
-    <td style="font-family:'JetBrains Mono',monospace;color:var(--muted)">${String(totalEvents).padStart(5,'0')}</td>
-    <td style="color:#c7d2fe;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${env.scenario}">${env.scenario}</td>
-    <td>${env.is_attack
-      ? `<span style="color:var(--crit)">${env.siem?.label}</span>`
-      : `<span style="color:var(--low)">BENIGN</span>`}</td>
-    <td class="${riskClass(score)}" style="font-family:'JetBrains Mono',monospace;font-weight:600">${score}</td>
+  eventMap[env.id]=env;
+  const tbody=document.getElementById('log-body');
+  const score=env.ueba_output?.risk_score??0;
+  const isAtk=env.is_attack;
+  const tr=document.createElement('tr');
+  tr.className='log-row new-row'; tr.dataset.id=env.id;
+  tr.onclick=()=>openDrawer(env.id);
+  tr.innerHTML=`
+    <td style="font-family:'JetBrains Mono',monospace;color:var(--muted)">${String(totalEvents).padStart(4,'0')}</td>
+    <td style="color:#c7d2fe;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${env.scenario}">${env.scenario}</td>
+    <td>${isAtk?`<span style="color:var(--crit)">${env.siem?.label}</span>`:`<span style="color:var(--low)">BENIGN</span>`}</td>
+    <td class="${riskClass(score)}" style="font-family:'JetBrains Mono',monospace;font-weight:700">${score}</td>
     <td style="color:${env.ueba_output?.is_anomaly?'var(--crit)':'var(--low)'}">${env.ueba_output?.is_anomaly?'⚠ YES':'✓ NO'}</td>
-    <td style="color:#6ee7b7;font-size:0.75rem">${env.soar?.action ?? '—'}</td>`;
-  tbody.insertBefore(tr, tbody.firstChild);
-  // prune old rows
-  while(tbody.rows.length > MAX_LOG) tbody.deleteRow(tbody.rows.length - 1);
+    <td style="color:#6ee7b7;font-size:0.75rem">${env.soar?.action??'—'}</td>
+    <td><button style="background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:0.7rem;padding:2px 7px;cursor:pointer;" onclick="event.stopPropagation();openDrawer('${env.id}',true)">Edit</button></td>`;
+  tbody.insertBefore(tr,tbody.firstChild);
+  while(tbody.rows.length>MAX_LOG)tbody.deleteRow(tbody.rows.length-1);
+  document.getElementById('log-count').textContent=`${totalEvents} events`;
 }
 
-// ── Process incoming SSE event ─────────────────────────────────────────────
-function onEvent(env){
-  if(env.__done__){
-    document.getElementById('scenario-badge').textContent = '✓ Simulation Complete';
-    return;
+// ── Drawer ─────────────────────────────────────────────────────────────────
+function openDrawer(id, openEditTab=false){
+  const env=eventMap[id]; if(!env) return;
+  selectedId=id;
+  // Highlight row
+  document.querySelectorAll('.log-row').forEach(r=>r.classList.remove('selected'));
+  const row=document.querySelector(`.log-row[data-id="${id}"]`);
+  if(row) row.classList.add('selected');
+
+  // SIEM tab
+  const siem=env.siem||{};
+  document.getElementById('d-siem-content').innerHTML=`
+    <div class="dfield"><label>Attack Label</label><div class="dfield-val" style="color:${env.is_attack?'var(--crit)':'var(--low)'}"><b>${siem.label||'—'}</b></div></div>
+    <div class="dfield"><label>Scenario</label><div class="dfield-val">${env.scenario||'—'}</div></div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px;">
+    ${[['Destination Port',siem.dst_port],['Flow Duration (ms)',siem.flow_dur_ms],
+      ['Fwd Packets',siem.fwd_pkts],['Bwd Packets',siem.bwd_pkts],
+      ['Flow Bytes/s',siem.flow_bytes_s],['SYN Flags',siem.syn_flags],
+      ['RST Flags',siem.rst_flags],['Pkt Len Variance',siem.pkt_len_var]]
+      .map(([k,v])=>`<div class="siem-field"><span class="k">${k}</span><span class="v">${v??'—'}</span></div>`).join('')}
+    </div>`;
+
+  // UEBA tab
+  const inp=env.ueba_input||{}, out=env.ueba_output||{};
+  document.getElementById('d-ueba-content').innerHTML=`
+    <div class="dfield"><label>Risk Score</label><div class="dfield-val" style="font-size:2rem;color:${riskColor(out.risk_score??0)}">${out.risk_score??'—'} <span style="font-size:0.8rem;color:var(--muted)">(${riskLabel(out.risk_score??0)})</span></div></div>
+    <div class="dfield"><label>Anomaly Detected</label><div class="dfield-val" style="color:${out.is_anomaly?'var(--crit)':'var(--low)'}">${out.is_anomaly?'⚠ YES — Isolation Forest flagged this as an outlier':'✓ NO — Within normal range'}</div></div>
+    <div class="dfield"><label>Raw IF Score</label><div class="dfield-val">${out.raw_score} <span style="font-size:0.72rem;color:var(--muted)">(threshold: -0.652)</span></div></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;"/>
+    <div class="section-lbl" style="margin-bottom:8px;">7 Feature Input Vector</div>
+    ${FEATS.map(f=>{const v=inp[f.key]??0,disp=typeof v==='number'?(v%1!==0?v.toFixed(3):v):v;
+      return `<div class="feat-row" style="margin-bottom:6px;"><span style="color:var(--muted);min-width:150px;flex-shrink:0;font-size:0.8rem;">${f.label}</span>${featBar(v,f.max,f.color)}<span style="min-width:50px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:${f.color}">${disp}</span></div>`;}).join('')}`;
+
+  // SOAR tab
+  const soar=env.soar||{}, st=soar.state||{};
+  const bands=['LOW','MEDIUM','HIGH','CRITICAL'];
+  document.getElementById('d-soar-content').innerHTML=`
+    <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:#6ee7b7;margin-bottom:6px;">Selected Action</div>
+      <div style="font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:4px;">${soar.action||'—'}</div>
+      <div style="font-size:0.85rem;color:#94a3b8;line-height:1.5;">${soar.explanation||'—'}</div>
+    </div>
+    <div class="section-lbl" style="margin-bottom:8px;">RL State Vector (Q-table key)</div>
+    <div style="font-family:'JetBrains Mono',monospace;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:0.82rem;">
+      <div style="color:var(--muted);margin-bottom:4px;">state = (risk_band=${st.risk_band}, mfa_bypassed=${st.mfa_bypassed}, anomaly_flag=${st.anomaly_flag})</div>
+      <div>Risk Band: <span style="color:${riskColor(out.risk_score??0)}">${bands[st.risk_band??0]} (index ${st.risk_band})</span></div>
+      <div>MFA Flag:  <span style="color:${st.mfa_bypassed?'var(--crit)':'var(--low)'}">${st.mfa_bypassed?1:0} — ${st.mfa_bypassed?'Bypass detected':'No bypass'}</span></div>
+      <div>Anomaly:   <span style="color:${st.anomaly_flag?'var(--crit)':'var(--low)'}">${st.anomaly_flag?1:0} — ${st.anomaly_flag?'Flagged':'Normal'}</span></div>
+      <div>Action ID: <span style="color:#6ee7b7">${soar.action_id} → ${soar.action}</span></div>
+    </div>
+    <div style="margin-top:12px;font-size:0.72rem;color:var(--muted);padding:8px;background:rgba(255,255,255,0.02);border-radius:6px;">
+      🔧 SOAR engine: <span style="color:#6ee7b7">rl_agent.py loaded in-process</span> inside simulator.py (not a Docker container).
+      The Q-table (47 states × 7 actions) is shared memory — zero network latency.
+    </div>`;
+
+  // Edit tab
+  buildEditFields(inp);
+  document.getElementById('replay-result').innerHTML='';
+
+  // Open drawer
+  document.getElementById('drawer').classList.add('open');
+  if(openEditTab){
+    document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.dtab-content').forEach(t=>t.classList.remove('active'));
+    document.querySelector('.dtab:last-child').classList.add('active');
+    document.getElementById('tab-edit').classList.add('active');
+  } else {
+    switchTab('tab-siem', document.querySelector('.dtab'));
   }
+}
 
-  totalEvents++;
-  if(env.is_attack) totalAttacks++;
-  else totalBenign++;
-  if(env.soar?.action_id !== 0) totalSoar++;
+function buildEditFields(inp){
+  document.getElementById('edit-fields').innerHTML=FEATS.map(f=>{
+    const val=inp[f.key]??0;
+    if(f.type==='bool'){
+      return `<div class="dfield"><label>${f.label}</label>
+        <select id="ef-${f.key}">
+          <option value="0" ${val===0?'selected':''}>0 — No</option>
+          <option value="1" ${val===1?'selected':''}>1 — Yes</option>
+        </select></div>`;
+    }
+    const disp=f.type==='float'?Number(val).toFixed(f.step<1?3:1):val;
+    return `<div class="dfield"><label>${f.label}</label>
+      <div class="slider-wrap">
+        <input type="range" id="ef-${f.key}" min="${f.min||0}" max="${f.max}" step="${f.step||1}" value="${val}" oninput="document.getElementById('ev-${f.key}').textContent=this.value">
+        <span id="ev-${f.key}">${disp}</span>
+      </div></div>`;
+  }).join('');
+}
 
-  document.getElementById('kpi-events').textContent = totalEvents.toLocaleString();
-  document.getElementById('kpi-attacks').textContent = totalAttacks.toLocaleString();
-  document.getElementById('kpi-benign').textContent = totalBenign.toLocaleString();
-  document.getElementById('kpi-soar').textContent = totalSoar.toLocaleString();
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.querySelectorAll('.log-row').forEach(r=>r.classList.remove('selected'));
+  selectedId=null;
+}
 
-  const score = env.ueba_output?.risk_score ?? 0;
-  const scoreEl = document.getElementById('kpi-risk');
-  scoreEl.textContent = score;
-  scoreEl.className = `kpi-val ${riskClass(score)}`;
+function switchTab(tabId, btn){
+  document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.dtab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
 
-  document.getElementById('scenario-badge').textContent = env.scenario;
+// ── Replay ─────────────────────────────────────────────────────────────────
+async function doReplay(){
+  const btn=document.getElementById('replay-btn');
+  btn.disabled=true; btn.textContent='⏳ Running…';
+  const features={};
+  FEATS.forEach(f=>{
+    const el=document.getElementById('ef-'+f.key);
+    features[f.key]=f.type==='float'?parseFloat(el.value):parseInt(el.value);
+  });
+  const originalEnv=eventMap[selectedId]||{};
+  try{
+    const res=await fetch('/api/replay',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({features, original_ueba: originalEnv.ueba_output||{}})});
+    const data=await res.json();
+    const origScore=originalEnv.ueba_output?.risk_score??0;
+    const newScore=data.ueba_output?.risk_score??0;
+    const delta=newScore-origScore;
+    const deltaClass=delta>0?'delta-up':delta<0?'delta-down':'delta-same';
+    const deltaText=delta>0?`▲ +${delta}`:delta<0?`▼ ${delta}`:'= 0';
 
-  renderSIEM(env.siem ?? {});
-  renderUEBA(env.ueba_input ?? {}, env.ueba_output ?? {});
-  renderSOAR(env.soar ?? {}, score);
+    document.getElementById('replay-result').innerHTML=`
+      <div class="replay-result">
+        <h4>Re-Evaluation Result</h4>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="font-size:0.85rem;color:var(--muted)">Original:</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;color:${riskColor(origScore)}">${origScore}</span>
+          <span style="color:var(--muted)">→</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:700;color:${riskColor(newScore)}">${newScore}</span>
+          <span class="delta-badge ${deltaClass}">${deltaText}</span>
+        </div>
+        <div style="margin-bottom:8px;font-size:0.82rem;">
+          <span style="color:var(--muted)">Anomaly: </span>
+          <span style="color:${data.ueba_output?.is_anomaly?'var(--crit)':'var(--low)'}">${data.ueba_output?.is_anomaly?'⚠ YES':'✓ NO'}</span>
+          ${data.delta?.anomaly_change?'<span style="color:#fbbf24;margin-left:8px;">(changed!)</span>':''}
+        </div>
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:10px;">
+          <div style="font-size:0.72rem;color:#6ee7b7;margin-bottom:4px;">NEW SOAR DECISION</div>
+          <div style="font-weight:700;color:#fff;margin-bottom:4px;">${data.soar?.action||'—'}</div>
+          <div style="font-size:0.8rem;color:#94a3b8;">${data.soar?.explanation||'—'}</div>
+        </div>
+      </div>`;
+  } catch(e){ document.getElementById('replay-result').innerHTML=`<p style="color:var(--crit);font-size:0.82rem;margin-top:10px;">Error: ${e.message}</p>`; }
+  btn.disabled=false; btn.textContent='⚡ Re-Evaluate Pipeline';
+}
+
+// ── Process SSE events ─────────────────────────────────────────────────────
+function onEvent(env){
+  if(env.__done__){document.getElementById('scenario-badge').textContent='✓ Simulation Complete';return;}
+  totalEvents++; if(env.is_attack)totalAttacks++;else totalBenign++;
+  if(env.soar?.action_id!==0)totalSoar++;
+  document.getElementById('kpi-events').textContent=totalEvents.toLocaleString();
+  document.getElementById('kpi-attacks').textContent=totalAttacks.toLocaleString();
+  document.getElementById('kpi-benign').textContent=totalBenign.toLocaleString();
+  document.getElementById('kpi-soar').textContent=totalSoar.toLocaleString();
+  const score=env.ueba_output?.risk_score??0;
+  const se=document.getElementById('kpi-risk'); se.textContent=score; se.className=`kpi-val ${riskClass(score)}`;
+  document.getElementById('scenario-badge').textContent=env.scenario;
+  renderSIEM(env.siem??{});
+  renderUEBA(env.ueba_input??{},env.ueba_output??{});
+  renderSOAR(env.soar??{},score);
   appendLog(env);
 }
 
-// ── SSE Connection ─────────────────────────────────────────────────────────
+// ── SSE connect ────────────────────────────────────────────────────────────
 function connect(){
-  const es = new EventSource('/api/stream');
-  es.onmessage = e => {
-    try { onEvent(JSON.parse(e.data)); }
-    catch(err) { console.warn('Parse error', err); }
-  };
-  es.onerror = () => {
-    console.warn('SSE disconnected, retrying in 3s…');
-    es.close();
-    setTimeout(connect, 3000);
-  };
+  const es=new EventSource('/api/stream');
+  es.onmessage=e=>{try{onEvent(JSON.parse(e.data));}catch(err){console.warn(err);}};
+  es.onerror=()=>{es.close();setTimeout(connect,3000);};
 }
 connect();
 
-// ── Controls ───────────────────────────────────────────────────────────────
-function togglePause(){
-  paused = !paused;
-  fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action: paused ? 'pause' : 'resume'})});
-  document.getElementById('pause-btn').textContent = paused ? '▶ Resume' : '⏸ Pause';
-}
+// ── Controls ────────────────────────────────────────────────────────────────
+function togglePause(){paused=!paused;
+  fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:paused?'pause':'resume'})});
+  document.getElementById('pause-btn').textContent=paused?'▶ Resume':'⏸ Pause';}
 function setSpeed(x){
-  fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'speed',value:x})});
-}
+  fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'speed',value:x})});}
 </script>
 </body>
 </html>
