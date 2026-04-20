@@ -151,6 +151,77 @@ body{background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
 input[type=range]{-webkit-appearance:none;width:100%;background:transparent;}
 input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:pointer;background:rgba(255,255,255,0.1);border-radius:2px;}
 input[type=range]::-webkit-slider-thumb{height:14px;width:14px;border-radius:50%;background:var(--accent);cursor:pointer;-webkit-appearance:none;margin-top:-5px;box-shadow:0 0 8px rgba(56,189,248,0.5);}
+
+/* Batch Mode Styles */
+.batch-section{display:none;padding:20px 24px;flex-direction:column;gap:0;}
+.batch-section.active{display:flex;}
+.batch-top{position:sticky;top:52px;z-index:100;background:var(--bg);padding:16px 0 12px;}
+.batch-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.batch-filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;}
+.filter-group{display:flex;flex-direction:column;gap:4px;min-width:130px;}
+.filter-group label{font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+.filter-group select,.filter-group input[type=range]{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:#fff;padding:6px 10px;font-size:0.8rem;outline:none;}
+.filter-group select:focus{border-color:var(--accent);}
+.filter-sep{width:1px;height:36px;background:var(--border);margin:0 4px;flex-shrink:0;}
+.batch-result-count{font-size:0.75rem;color:var(--muted);padding:6px 0 10px;}
+.batch-results{display:flex;flex-direction:column;gap:10px;}
+.bc{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:all 0.2s;cursor:pointer;}
+.bc:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 20px rgba(56,189,248,0.08);}
+.bc-header{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);gap:10px;}
+.bc-flow{display:grid;grid-template-columns:1fr 28px 1.2fr 28px 1fr;align-items:stretch;padding:12px;gap:4px;}
+.bc-mod{padding:10px 12px;border-radius:8px;border:1px solid var(--border);display:flex;flex-direction:column;gap:6px;transition:all 0.2s;}
+.bc-mod:hover{transform:scale(1.01);}
+.bc-mod-siem{background:rgba(99,102,241,0.04);border-color:rgba(99,102,241,0.2);}
+.bc-mod-siem:hover{background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.5);}
+.bc-mod-ueba{background:rgba(245,158,11,0.04);border-color:rgba(245,158,11,0.2);}
+.bc-mod-ueba:hover{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.5);}
+.bc-mod-soar{background:rgba(16,185,129,0.04);border-color:rgba(16,185,129,0.2);}
+.bc-mod-soar:hover{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.5);}
+.bc-mod-title{font-size:0.62rem;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:2px;}
+.bc-mod-title-siem{color:#a5b4fc;}
+.bc-mod-title-ueba{color:#fde68a;}
+.bc-mod-title-soar{color:#6ee7b7;}
+.bc-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+.bc-row:last-child{border:none;}
+.bc-k{font-size:0.68rem;color:var(--muted);flex-shrink:0;}
+.bc-v{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text);text-align:right;}
+.bc-arrow{display:flex;align-items:center;justify-content:center;color:rgba(56,189,248,0.4);font-size:1rem;}
+.bc-hint{text-align:center;font-size:0.6rem;color:var(--muted);opacity:0.6;margin-top:4px;}
+.pagination{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:20px;padding:20px;}
+.mode-toggle{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px;margin-right:20px;}
+.toggle-btn{padding:6px 12px;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer;border:none;background:none;color:var(--muted);transition:0.2s;}
+.toggle-btn.active{background:var(--accent);color:#000;}
+
+/* Detail Modal */
+.bmodal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;}
+.bmodal-overlay.open{display:flex;}
+.bmodal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:740px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;}
+.bmodal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.bmodal-close{background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);width:32px;height:32px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:0.2s;}
+.bmodal-close:hover{background:rgba(255,255,255,0.08);color:#fff;}
+.bmodal-tabs{display:flex;gap:6px;padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;}
+.bmodal-tab{padding:6px 14px;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--muted);transition:0.2s;white-space:nowrap;}
+.bmodal-tab.active{color:#fff;border-color:var(--accent);background:rgba(56,189,248,0.1);}
+.bmodal-body{flex:1;overflow-y:auto;padding:20px;}
+.info-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;}
+.info-box-title{font-size:0.68rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.info-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);gap:12px;}
+.info-row:last-child{border:none;}
+.info-key{font-size:0.78rem;color:var(--muted);min-width:160px;}
+.info-val{font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:var(--text);text-align:right;}
+.info-desc{font-size:0.72rem;color:#64748b;margin-top:3px;line-height:1.4;}
+.feat-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;}
+.edit-label{display:block;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;margin-top:14px;}
+.edit-label:first-child{margin-top:0;}
+.edit-control{width:100%;}
+.edit-slider-row{display:flex;align-items:center;gap:10px;}
+.edit-slider-row input[type=range]{flex:1;}
+.edit-slider-row span{min-width:46px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:var(--accent);}
+.edit-select{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:#fff;padding:8px 12px;font-size:0.85rem;outline:none;}
+.btn-run-sim{width:100%;margin-top:16px;background:linear-gradient(135deg,var(--accent),#818cf8);border:none;border-radius:10px;padding:13px;font-weight:700;font-size:0.95rem;color:#000;cursor:pointer;transition:all 0.25s;}
+.btn-run-sim:hover{opacity:0.85;transform:translateY(-1px);}
+.btn-run-sim:disabled{opacity:0.4;transform:none;cursor:not-allowed;}
+.sim-result-box{margin-top:14px;border-radius:10px;padding:14px;background:var(--card);border:1px solid var(--border);}
 </style>
 </head>
 <body>
@@ -162,7 +233,13 @@ input[type=range]::-webkit-slider-thumb{height:14px;width:14px;border-radius:50%
     <h1>ZENGUARD WAR ROOM</h1>
     <span style="color:var(--muted);font-size:0.75rem;margin-left:6px;">Live CICIDS2017 Simulation</span>
   </div>
-  <div class="scenario-badge" id="scenario-badge">Initializing…</div>
+  <div style="display:flex;align-items:center;">
+    <div class="mode-toggle">
+        <button class="toggle-btn active" id="mode-live" onclick="setMode('live')">📡 Live Feed</button>
+        <button class="toggle-btn" id="mode-batch" onclick="setMode('batch')">🧪 Test Evaluation</button>
+    </div>
+    <div class="scenario-badge" id="scenario-badge">Initializing…</div>
+  </div>
   <div class="controls">
     <span style="font-size:0.78rem;color:var(--muted);">Speed:</span>
     <button class="btn btn-fast" onclick="setSpeed(1)">1×</button>
@@ -182,7 +259,7 @@ input[type=range]::-webkit-slider-thumb{height:14px;width:14px;border-radius:50%
 </div>
 
 <!-- ── Main layout ── -->
-<div class="main-wrap">
+<div class="main-wrap" id="live-section">
   <div class="pipeline-wrap">
     <!-- Pipeline -->
     <div class="pipeline">
@@ -296,11 +373,107 @@ input[type=range]::-webkit-slider-thumb{height:14px;width:14px;border-radius:50%
   </div>
 </div>
 
+<!-- ── Batch Evaluation Section ── -->
+<div id="batch-section" class="batch-section">
+
+  <!-- Sticky top: heading + filters -->
+  <div class="batch-top">
+    <div class="batch-heading">
+      <div>
+        <h2 style="font-size:1.05rem;font-weight:700;color:var(--accent);">🧪 30% Hold-out Test Set Evaluation</h2>
+        <p style="font-size:0.75rem;color:var(--muted);margin-top:3px;">These records were never seen during training. Each passes through SIEM → UEBA → SOAR. Click any card to inspect &amp; edit.</p>
+      </div>
+      <button class="btn btn-fast" onclick="runBatchSimulation(batchPage)" id="btn-run-batch">🔄 Reload</button>
+    </div>
+
+    <!-- Filter &amp; Sort bar -->
+    <div class="batch-filter-bar">
+      <div class="filter-group">
+        <label>Traffic Type</label>
+        <select id="f-type" onchange="applyBatchFilters()">
+          <option value="all">All (Attack + Benign)</option>
+          <option value="attack">Attacks Only</option>
+          <option value="benign">Benign Only</option>
+        </select>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group">
+        <label>Anomaly Flag</label>
+        <select id="f-anomaly" onchange="applyBatchFilters()">
+          <option value="all">Any</option>
+          <option value="yes">Anomaly Detected</option>
+          <option value="no">Normal</option>
+        </select>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group">
+        <label>MFA Bypassed</label>
+        <select id="f-mfa" onchange="applyBatchFilters()">
+          <option value="all">Any</option>
+          <option value="1">Yes — Bypassed</option>
+          <option value="0">No — Not Bypassed</option>
+        </select>
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group" style="min-width:160px;">
+        <label>Min Risk Score: <span id="f-risk-val">0</span></label>
+        <input type="range" id="f-risk" min="0" max="100" value="0" oninput="document.getElementById('f-risk-val').textContent=this.value;applyBatchFilters()">
+      </div>
+      <div class="filter-sep"></div>
+      <div class="filter-group">
+        <label>Sort By</label>
+        <select id="f-sort" onchange="applyBatchFilters()">
+          <option value="default">Default Order</option>
+          <option value="risk-desc">Risk Score ↓ (Highest First)</option>
+          <option value="risk-asc">Risk Score ↑ (Lowest First)</option>
+          <option value="attack-first">Attacks First</option>
+          <option value="benign-first">Benign First</option>
+        </select>
+      </div>
+    </div>
+    <div class="batch-result-count" id="batch-count">0 results</div>
+  </div>
+
+  <div class="batch-results" id="batch-results-list">
+    <div style="text-align:center;padding:80px;color:var(--muted);">
+      <p style="font-size:0.9rem;">Switch to this tab or click 🔄 to load the test set.</p>
+    </div>
+  </div>
+
+  <div class="pagination" id="batch-pagination" style="display:none;">
+    <button class="btn btn-pause" id="page-prev" onclick="changeBatchPage(-1)">← Previous</button>
+    <span id="page-info" style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;">Page 1 of 1</span>
+    <button class="btn btn-pause" id="page-next" onclick="changeBatchPage(1)">Next →</button>
+  </div>
+</div>
+
+<!-- ── Detail Modal ── -->
+<div class="bmodal-overlay" id="bmodal-overlay" onclick="if(event.target===this)closeBModal()">
+  <div class="bmodal">
+    <div class="bmodal-head">
+      <div>
+        <div id="bmodal-title" style="font-weight:700;font-size:1rem;color:#fff;">Event Inspector</div>
+        <div id="bmodal-subtitle" style="font-size:0.72rem;color:var(--muted);margin-top:2px;">—</div>
+      </div>
+      <button class="bmodal-close" onclick="closeBModal()">✕</button>
+    </div>
+    <div class="bmodal-tabs">
+      <button class="bmodal-tab active" id="btab-btn-overview" onclick="switchBTab('overview',this)">📊 Overview</button>
+      <button class="bmodal-tab" id="btab-btn-siem" onclick="switchBTab('siem',this)">🛡 SIEM Details</button>
+      <button class="bmodal-tab" id="btab-btn-ueba" onclick="switchBTab('ueba',this)">📈 UEBA Analysis</button>
+      <button class="bmodal-tab" id="btab-btn-soar" onclick="switchBTab('soar',this)">⚡ SOAR Decision</button>
+      <button class="bmodal-tab" id="btab-btn-edit" onclick="switchBTab('edit',this)">✏️ What-If Lab</button>
+    </div>
+    <div class="bmodal-body" id="bmodal-body"></div>
+  </div>
+</div>
+
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
 let paused=false, totalEvents=0, totalAttacks=0, totalBenign=0, totalSoar=0;
 const MAX_LOG=200, eventMap={};  // id → full envelope
-let selectedId=null;
+let selectedId=null, currentMode='live';
+let batchPage=1, batchTotalPages=1;
 
 // ── Color helpers ──────────────────────────────────────────────────────────
 function riskColor(s){return s>=95?'var(--crit)':s>=75?'var(--high)':s>=50?'var(--med)':'var(--low)';}
@@ -566,7 +739,7 @@ function onEvent(env){
   appendLog(env);
 }
 
-// ── SSE connect ────────────────────────────────────────────────────────────
+// ── SSE connect ─────────────────────────────────────────────────────────────
 function connect(){
   const es=new EventSource('/api/stream');
   es.onmessage=e=>{try{onEvent(JSON.parse(e.data));}catch(err){console.warn(err);}};
@@ -574,12 +747,355 @@ function connect(){
 }
 connect();
 
-// ── Controls ────────────────────────────────────────────────────────────────
+// ── Controls ─────────────────────────────────────────────────────────────────
 function togglePause(){paused=!paused;
   fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:paused?'pause':'resume'})});
   document.getElementById('pause-btn').textContent=paused?'▶ Resume':'⏸ Pause';}
 function setSpeed(x){
   fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'speed',value:x})});}
+
+// ── Batch Mode Logic ─────────────────────────────────────────────────────────
+let batchRawResults = [];
+
+function setMode(mode){
+    currentMode = mode;
+    document.getElementById('mode-live').classList.toggle('active', mode==='live');
+    document.getElementById('mode-batch').classList.toggle('active', mode==='batch');
+    document.getElementById('live-section').style.display = mode==='live' ? 'flex' : 'none';
+    document.getElementById('batch-section').classList.toggle('active', mode==='batch');
+    if(mode === 'batch' && batchRawResults.length === 0) runBatchSimulation(1);
+}
+
+async function runBatchSimulation(page){
+    const list = document.getElementById('batch-results-list');
+    const runBtn = document.getElementById('btn-run-batch');
+    runBtn.disabled = true;
+    runBtn.textContent = '⏳ Loading...';
+    if(page === 1) list.innerHTML = '<div style="text-align:center;padding:80px;"><div class="logo-dot" style="margin:0 auto 20px;"></div><p style="color:var(--muted)">Running 30% test split through SIEM → UEBA → SOAR pipeline...</p></div>';
+    try {
+        const res = await fetch(`/api/evaluate_test?page=${page}&limit=50`);
+        const data = await res.json();
+        if(data.error){ list.innerHTML=`<div style="color:var(--crit);padding:40px;text-align:center">${data.error}</div>`; return; }
+        batchPage = data.page;
+        batchTotalPages = data.pages;
+        // Store all results in eventMap for drawer access
+        batchRawResults = data.results;
+        data.results.forEach(ev => { ev.scenario = ev.siem.label; eventMap[ev.id] = ev; });
+        applyBatchFilters();
+        updatePaginationUI();
+    } catch(e) {
+        list.innerHTML = `<div style="text-align:center;padding:50px;color:var(--crit)">Error: ${e.message}</div>`;
+    }
+    runBtn.disabled = false;
+    runBtn.textContent = '🔄 Reload';
+}
+
+function applyBatchFilters(){
+    let results = [...batchRawResults];
+    const fType = document.getElementById('f-type')?.value || 'all';
+    const fAnom = document.getElementById('f-anomaly')?.value || 'all';
+    const fMfa  = document.getElementById('f-mfa')?.value || 'all';
+    const fRisk = parseInt(document.getElementById('f-risk')?.value || 0);
+    const fSort = document.getElementById('f-sort')?.value || 'default';
+
+    if(fType === 'attack') results = results.filter(r => r.is_attack);
+    if(fType === 'benign') results = results.filter(r => !r.is_attack);
+    if(fAnom === 'yes') results = results.filter(r => r.ueba_output.is_anomaly);
+    if(fAnom === 'no')  results = results.filter(r => !r.ueba_output.is_anomaly);
+    if(fMfa === '1') results = results.filter(r => r.ueba_input.MFA_bypassed === 1);
+    if(fMfa === '0') results = results.filter(r => r.ueba_input.MFA_bypassed === 0);
+    results = results.filter(r => r.ueba_output.risk_score >= fRisk);
+
+    if(fSort === 'risk-desc') results.sort((a,b) => b.ueba_output.risk_score - a.ueba_output.risk_score);
+    if(fSort === 'risk-asc')  results.sort((a,b) => a.ueba_output.risk_score - b.ueba_output.risk_score);
+    if(fSort === 'attack-first') results.sort((a,b) => b.is_attack - a.is_attack);
+    if(fSort === 'benign-first') results.sort((a,b) => a.is_attack - b.is_attack);
+
+    document.getElementById('batch-count').textContent = `${results.length} result${results.length!==1?'s':''} (filtered from ${batchRawResults.length})`;
+    renderBatchResults(results);
+}
+
+function renderBatchResults(results){
+    const list = document.getElementById('batch-results-list');
+    if(!results.length){ list.innerHTML='<div style="text-align:center;padding:60px;color:var(--muted);">No results match current filters.</div>'; return; }
+    list.innerHTML = results.map(ev => {
+        const score = ev.ueba_output.risk_score;
+        const isAtk = ev.is_attack;
+        const rc = riskColor(score);
+        const rl = riskLabel(score);
+        const mfa = ev.ueba_input.MFA_bypassed;
+        const anom = ev.ueba_output.is_anomaly;
+        return `
+        <div class="bc" onclick="openBModal('${ev.id}','overview')">
+          <div class="bc-header">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--muted);flex-shrink:0">ID:${ev.id}</span>
+              <span style="font-size:0.8rem;font-weight:600;color:${isAtk?'#fca5a5':'#86efac'};background:${isAtk?'rgba(239,68,68,0.1)':'rgba(34,197,94,0.08)'};padding:3px 10px;border-radius:20px;border:1px solid ${isAtk?'rgba(239,68,68,0.3)':'rgba(34,197,94,0.25)'};">${isAtk?ev.siem.label:'BENIGN'}</span>
+              ${mfa?'<span style="font-size:0.7rem;background:rgba(239,68,68,0.15);color:#fca5a5;padding:2px 8px;border-radius:12px;border:1px solid rgba(239,68,68,0.3);">🔓 MFA Bypassed</span>':''}
+              ${anom?'<span style="font-size:0.7rem;background:rgba(251,191,36,0.12);color:#fbbf24;padding:2px 8px;border-radius:12px;border:1px solid rgba(251,191,36,0.3);">⚠ Anomaly</span>':''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+              <div style="text-align:right;">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:700;color:${rc};line-height:1">${score}</div>
+                <div style="font-size:0.6rem;color:${rc};">${rl} RISK</div>
+              </div>
+              <span style="font-size:0.7rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:3px 8px;">Click to Inspect ›</span>
+            </div>
+          </div>
+          <div class="bc-flow">
+            <div class="bc-mod bc-mod-siem" onclick="event.stopPropagation();openBModal('${ev.id}','siem')" title="Click to view SIEM details">
+              <div class="bc-mod-title bc-mod-title-siem">① SIEM — Traffic Classification</div>
+              <div class="bc-row"><span class="bc-k">Dest. Port</span><span class="bc-v">${ev.siem.dst_port}</span></div>
+              <div class="bc-row"><span class="bc-k">SYN Flags</span><span class="bc-v">${ev.siem.syn_flags}</span></div>
+              <div class="bc-row"><span class="bc-k">RST Flags</span><span class="bc-v">${ev.siem.rst_flags}</span></div>
+              <div class="bc-row"><span class="bc-k">Verdict</span><span class="bc-v" style="color:${isAtk?'var(--crit)':'var(--low)'}">${isAtk?'⚠ Attack':'✓ Safe'}</span></div>
+              <div class="bc-hint">Click for full details</div>
+            </div>
+            <div class="bc-arrow">›</div>
+            <div class="bc-mod bc-mod-ueba" onclick="event.stopPropagation();openBModal('${ev.id}','ueba')" title="Click to view UEBA details">
+              <div class="bc-mod-title bc-mod-title-ueba">② UEBA — Behavior Analysis</div>
+              <div class="bc-row"><span class="bc-k">Failed Logins</span><span class="bc-v">${ev.ueba_input.failed_logins}</span></div>
+              <div class="bc-row"><span class="bc-k">MFA Bypassed</span><span class="bc-v" style="color:${mfa?'var(--crit)':'var(--low)'}">${mfa?'⚠ YES':'✓ NO'}</span></div>
+              <div class="bc-row"><span class="bc-k">Risk Score</span><span class="bc-v" style="color:${rc}">${score}/100</span></div>
+              <div class="bc-row"><span class="bc-k">Anomaly</span><span class="bc-v" style="color:${anom?'var(--crit)':'var(--low)'}">${anom?'⚠ YES':'✓ NO'}</span></div>
+              <div class="bc-hint">Click for full details</div>
+            </div>
+            <div class="bc-arrow">›</div>
+            <div class="bc-mod bc-mod-soar" onclick="event.stopPropagation();openBModal('${ev.id}','soar')" title="Click to view SOAR decision">
+              <div class="bc-mod-title bc-mod-title-soar">③ SOAR — Response Action</div>
+              <div class="bc-row"><span class="bc-k">Action</span><span class="bc-v" style="color:#6ee7b7;font-weight:600;">${ev.soar.action}</span></div>
+              <div class="bc-row"><span class="bc-k">Risk Band</span><span class="bc-v" style="color:${rc}">${rl}</span></div>
+              <div style="font-size:0.65rem;color:#94a3b8;margin-top:4px;line-height:1.3;">${ev.soar.explanation}</div>
+              <div class="bc-hint">Click to inspect + modify</div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+// ── Detail Modal Logic ──────────────────────────────────────────────────────
+let bmodalCurrentId = null;
+const FEAT_META = {
+    failed_logins:              {label:'Failed Login Attempts',    desc:'How many times the system detected failed login attempts. Higher = more suspicious.',  max:20,  type:'int',  min:0,step:1,  color:'#f87171'},
+    privilege_change_attempted: {label:'Privilege Escalation Try', desc:'Did the system detect an attempt to gain higher access (e.g. admin rights)?',      max:1,   type:'bool',             color:'#fb923c'},
+    external_connection:        {label:'External Connection',      desc:'Was this traffic coming from outside the organization\'s network?',                    max:1,   type:'bool',             color:'#facc15'},
+    MFA_bypassed:               {label:'MFA Bypass',               desc:'Did someone access the system without completing the 2-step verification?',             max:1,   type:'bool',             color:'#ef4444'},
+    session_duration:           {label:'Session Duration (min)',   desc:'How long was this network session active? Very short or very long may be suspicious.', max:1440,type:'float',min:0,step:1,  color:'#60a5fa'},
+    access_hour:                {label:'Access Hour (0–23)',        desc:'What hour of the day was this access? Off-hours (e.g. 2am) can indicate an attack.',   max:23,  type:'int',  min:0,step:1,  color:'#a78bfa'},
+    device_trust_score:         {label:'Device Trust Score (0–1)', desc:'How trusted is this device? 0 = completely unknown, 1 = fully managed company device.',  max:1,   type:'float',min:0,step:0.01,color:'#34d399'},
+};
+
+function openBModal(id, tab='overview'){
+    const ev = eventMap[id]; if(!ev) return;
+    bmodalCurrentId = id;
+    const score = ev.ueba_output.risk_score;
+    const isAtk = ev.is_attack;
+    document.getElementById('bmodal-title').textContent = isAtk ? `⚠ Attack Detected — ${ev.siem.label}` : '✓ Benign Traffic';
+    document.getElementById('bmodal-subtitle').textContent = `Record ID: ${id}  |  Risk: ${score}  |  Category: ${ev.siem.label}`;
+    document.getElementById('bmodal-overlay').classList.add('open');
+    switchBTab(tab);
+}
+
+function closeBModal(){ document.getElementById('bmodal-overlay').classList.remove('open'); bmodalCurrentId = null; }
+
+function switchBTab(tab, btn){
+    document.querySelectorAll('.bmodal-tab').forEach(t=>t.classList.remove('active'));
+    const b = btn || document.getElementById('btab-btn-'+tab);
+    if(b) b.classList.add('active');
+    const ev = eventMap[bmodalCurrentId]; if(!ev) return;
+    const score = ev.ueba_output.risk_score;
+    const isAtk = ev.is_attack;
+    const rc = riskColor(score);
+    const rl = riskLabel(score);
+    const inp = ev.ueba_input || {};
+    const out = ev.ueba_output || {};
+    const soar = ev.soar || {};
+    const siem = ev.siem || {};
+    const st = soar.state || {};
+    const bands = ['LOW','MEDIUM','HIGH','CRITICAL'];
+    const body = document.getElementById('bmodal-body');
+
+    if(tab === 'overview'){
+        body.innerHTML = `
+          <div class="info-box">
+            <div class="info-box-title">📋 Summary — What Happened?</div>
+            <div class="info-row"><span class="info-key">Traffic Type</span><span class="info-val" style="color:${isAtk?'var(--crit)':'var(--low)'};font-weight:700">${isAtk?'⚠ ATTACK DETECTED':'✓ BENIGN (Safe Traffic)'}</span></div>
+            <div class="info-row"><span class="info-key">Attack Category</span><span class="info-val">${siem.label || '—'}</span></div>
+            <div class="info-row"><span class="info-key">Risk Score</span><span class="info-val" style="color:${rc};font-size:1.4rem;font-weight:700">${score} <span style="font-size:0.75rem;">/100 (${rl})</span></span></div>
+            <div class="info-row"><span class="info-key">Model Flagged Anomaly?</span><span class="info-val" style="color:${out.is_anomaly?'var(--crit)':'var(--low)'}">${out.is_anomaly?'⚠ Yes — This looks unusual':'✓ No — Looks normal'}</span></div>
+            <div class="info-row"><span class="info-key">MFA Bypassed?</span><span class="info-val" style="color:${inp.MFA_bypassed?'var(--crit)':'var(--low)'}">${inp.MFA_bypassed?'⚠ Yes — Security check skipped!':'✓ No'}</span></div>
+            <div class="info-row"><span class="info-key">SOAR Action Taken</span><span class="info-val" style="color:#6ee7b7;font-weight:600">${soar.action}</span></div>
+          </div>
+          <div class="info-box" style="border-color:rgba(56,189,248,0.2);background:rgba(56,189,248,0.03);">
+            <div class="info-box-title">🔁 Pipeline Flow</div>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:8px 14px;text-align:center;">
+                <div style="font-size:0.65rem;color:#a5b4fc;margin-bottom:3px;">STEP 1 — SIEM</div>
+                <div style="font-size:0.8rem;font-weight:600;color:${isAtk?'var(--crit)':'var(--low)'}">${isAtk?'Attack':'Benign'}</div>
+              </div>
+              <div style="color:var(--accent);font-size:1.2rem;">→</div>
+              <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px 14px;text-align:center;">
+                <div style="font-size:0.65rem;color:#fde68a;margin-bottom:3px;">STEP 2 — UEBA</div>
+                <div style="font-size:0.8rem;font-weight:600;color:${rc}">${score}/100</div>
+              </div>
+              <div style="color:var(--accent);font-size:1.2rem;">→</div>
+              <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:8px 14px;text-align:center;">
+                <div style="font-size:0.65rem;color:#6ee7b7;margin-bottom:3px;">STEP 3 — SOAR</div>
+                <div style="font-size:0.8rem;font-weight:600;color:#6ee7b7">${soar.action}</div>
+              </div>
+            </div>
+            <p style="font-size:0.75rem;color:var(--muted);margin-top:10px;line-height:1.5;">The traffic was first classified by SIEM, then scored for risk by UEBA, and finally the SOAR agent decided on the best response action.</p>
+          </div>`;
+    } else if(tab === 'siem'){
+        body.innerHTML = `
+          <div class="info-box">
+            <div class="info-box-title">🛡 SIEM — What raw network data was observed?</div>
+            <p style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;">SIEM (Security Information &amp; Event Management) captures raw packets from the network and extracts them into behavioral features. These are the actual observed raw values from the dataset.</p>
+            ${[['Destination Port','The network port the traffic was sent to. Port 22 = SSH, 80 = web, 443 = secure web, 3389 = remote desktop.',siem.dst_port],
+               ['Flow Duration (ms)','How long was the network connection? Very long or very short flows can be suspicious.',siem.flow_dur_ms?.toLocaleString()],
+               ['Forward Packets','Number of packets sent from source to destination.',siem.fwd_pkts],
+               ['Backward Packets','Number of packets sent from destination back to source.',siem.bwd_pkts],
+               ['Flow Bytes/s','Data transfer speed. Unusually high values may indicate data exfiltration.',siem.flow_bytes_s?.toLocaleString()],
+               ['SYN Flags','SYN packets are used to start connections. Many SYNs = possible port scan or brute force.',siem.syn_flags],
+               ['RST Flags','RST packets forcefully close connections. High count = abnormal behavior.',siem.rst_flags],
+               ['Packet Length Variance','How much the packet sizes vary. High variance can indicate encrypted C2 traffic.',siem.pkt_len_var],
+            ].map(([k,desc,v])=>`
+              <div class="info-row"><div><div class="info-key">${k}</div><div class="info-desc">${desc}</div></div><span class="info-val">${v??'—'}</span></div>`).join('')}
+          </div>
+          <div class="info-box" style="border-color:${isAtk?'rgba(239,68,68,0.3)':'rgba(34,197,94,0.3)'}">
+            <div class="info-box-title">SIEM Verdict</div>
+            <div style="font-size:1.1rem;font-weight:700;color:${isAtk?'var(--crit)':'var(--low)'}">${isAtk?'⚠ ATTACK DETECTED':'✓ BENIGN TRAFFIC'}</div>
+            <div style="font-size:0.8rem;color:var(--muted);margin-top:8px;">Ground truth label from the CICIDS2017 dataset: <strong style="color:var(--text)">${siem.label}</strong></div>
+          </div>`;
+    } else if(tab === 'ueba'){
+        body.innerHTML = `
+          <div class="info-box">
+            <div class="info-box-title">📈 UEBA — What behavioral features were analyzed?</div>
+            <p style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;">UEBA (User Entity Behavior Analytics) consumes the 7 behavioral signals extracted by the SIEM, then scores them using an Isolation Forest machine learning model.</p>
+            ${Object.entries(inp).map(([k, v])=>{
+                const m = FEAT_META[k] || {label:k,desc:'',max:1,color:'#888'};
+                const p = Math.min(100,(v/m.max)*100);
+                const disp = (typeof v==='number' && v%1!==0) ? v.toFixed(3) : v;
+                return `<div style="margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                        <span style="font-size:0.78rem;color:var(--muted);">${m.label}</span>
+                        <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:${m.color};">${disp}</span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04);border-radius:4px;height:6px;overflow:hidden;margin-bottom:4px;">
+                        <div style="width:${p}%;background:${m.color};height:100%;border-radius:4px;"></div>
+                    </div>
+                    <div style="font-size:0.67rem;color:#4b5563;">${m.desc}</div>
+                </div>`;
+            }).join('')}
+          </div>
+          <div class="info-box" style="border-color:rgba(245,158,11,0.3);">
+            <div class="info-box-title">Model Output (Isolation Forest)</div>
+            <div class="info-row"><span class="info-key">Risk Score</span><span class="info-val" style="color:${rc};font-size:1.6rem;font-weight:700">${score}/100</span></div>
+            <div class="info-row"><span class="info-key">Risk Level</span><span class="info-val" style="color:${rc};font-weight:600">${rl}</span></div>
+            <div class="info-row"><span class="info-key">Anomaly Detected?</span><span class="info-val" style="color:${out.is_anomaly?'var(--crit)':'var(--low)'}">${out.is_anomaly?'⚠ YES — This event is statistically unusual':'✓ NO — Looks like normal behavior'}</span></div>
+            <div class="info-row"><span class="info-key">Raw IF Score</span><span class="info-val">${out.raw_score}</span></div>
+            <p style="font-size:0.72rem;color:var(--muted);margin-top:8px;">The Isolation Forest model was trained on 70% of the dataset. A lower raw score means this event is more isolated (anomalous). The threshold is roughly -0.65.</p>
+          </div>`;
+    } else if(tab === 'soar'){
+        body.innerHTML = `
+          <div class="info-box" style="border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.04);">
+            <div class="info-box-title">⚡ SOAR — What action did the AI agent decide to take?</div>
+            <div style="font-size:1.4rem;font-weight:700;color:#6ee7b7;margin-bottom:6px;">${soar.action}</div>
+            <div style="font-size:0.85rem;color:#94a3b8;line-height:1.5;margin-bottom:14px;">${soar.explanation}</div>
+            <p style="font-size:0.72rem;color:var(--muted);">The SOAR (Security Orchestration, Automation and Response) agent uses Reinforcement Learning (Q-table). It learned from thousands of past incidents which action minimizes damage given the current threat signals.</p>
+          </div>
+          <div class="info-box">
+            <div class="info-box-title">🔑 How Did the Agent Decide?</div>
+            <p style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;">The RL agent sees only 3 inputs (called the "state") to make its decision:</p>
+            <div class="info-row"><span class="info-key">Risk Band</span><span class="info-val" style="color:${rc}">${bands[st.risk_band??0]} (Band #${st.risk_band})</span></div>
+            <div class="info-row"><div><div class="info-key">MFA Bypass Flag</div><div class="info-desc">Was 2-factor auth skipped?</div></div><span class="info-val" style="color:${st.mfa_bypassed?'var(--crit)':'var(--low)'}">${st.mfa_bypassed?1:0} — ${st.mfa_bypassed?'Bypassed!':'Normal'}</span></div>
+            <div class="info-row"><div><div class="info-key">Anomaly Flag</div><div class="info-desc">Did Isolation Forest flag this?</div></div><span class="info-val" style="color:${st.anomaly_flag?'var(--crit)':'var(--low)'}">${st.anomaly_flag?1:0} — ${st.anomaly_flag?'Flagged Anomaly':'All Clear'}</span></div>
+            <div class="info-row"><span class="info-key">Chosen Action ID</span><span class="info-val" style="color:#6ee7b7">#${soar.action_id} → ${soar.action}</span></div>
+            <div style="margin-top:12px;padding:10px;background:rgba(255,255,255,0.02);border-radius:8px;font-size:0.7rem;color:var(--muted);">Q-table state key: <span style="font-family:'JetBrains Mono',monospace;color:#a5b4fc">(${st.risk_band}, ${st.mfa_bypassed?1:0}, ${st.anomaly_flag?1:0})</span></div>
+          </div>`;
+    } else if(tab === 'edit'){
+        body.innerHTML = `
+          <div style="margin-bottom:14px;">
+            <div style="font-weight:700;color:#fff;margin-bottom:4px;">🔬 What-If Lab</div>
+            <p style="font-size:0.78rem;color:var(--muted);line-height:1.5;">Modify any of the 7 behavioral signals below and click <strong style="color:var(--accent)">Re-Simulate</strong> to see how the risk score and SOAR decision would change. This is a live re-run through the full pipeline.</p>
+          </div>
+          ${Object.entries(inp).map(([k, v])=>{
+            const m = FEAT_META[k] || {label:k,desc:'',max:1,type:'bool',color:'#888'};
+            if(m.type==='bool'){
+                return `<label class="edit-label">${m.label}</label>
+                    <p style="font-size:0.67rem;color:#4b5563;margin-bottom:6px;">${m.desc}</p>
+                    <select class="edit-select" id="bef-${k}">
+                        <option value="0" ${v===0?'selected':''}>0 — No</option>
+                        <option value="1" ${v===1?'selected':''}>1 — Yes</option>
+                    </select>`;
+            }
+            const disp = (typeof v==='number' && v%1!==0)?v.toFixed(3):String(v);
+            return `<label class="edit-label">${m.label}</label>
+                <p style="font-size:0.67rem;color:#4b5563;margin-bottom:6px;">${m.desc}</p>
+                <div class="edit-slider-row">
+                    <input type="range" min="${m.min||0}" max="${m.max}" step="${m.step||1}" value="${v}" id="bef-${k}" oninput="document.getElementById('bev-${k}').textContent=parseFloat(this.value).toFixed(${(m.step||1)<1?3:0})">
+                    <span id="bev-${k}">${disp}</span>
+                </div>`;
+          }).join('<hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">')}
+          <button class="btn-run-sim" id="bmodal-replay-btn" onclick="doBModalReplay()">⚡ Re-Simulate Pipeline</button>
+          <div id="bmodal-replay-result"></div>`;
+    }
+}
+
+async function doBModalReplay(){
+    const ev = eventMap[bmodalCurrentId]; if(!ev) return;
+    const btn = document.getElementById('bmodal-replay-btn');
+    btn.disabled = true; btn.textContent = '⏳ Simulating...';
+    const features = {};
+    Object.keys(ev.ueba_input).forEach(k => {
+        const el = document.getElementById('bef-' + k);
+        if(!el) return;
+        const m = FEAT_META[k] || {};
+        features[k] = m.type==='float' ? parseFloat(el.value) : parseInt(el.value);
+    });
+    try {
+        const res = await fetch('/api/replay', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({features, original_ueba: ev.ueba_output})
+        });
+        const data = await res.json();
+        const origScore = ev.ueba_output.risk_score;
+        const newScore = data.ueba_output?.risk_score ?? 0;
+        const delta = newScore - origScore;
+        const dc = delta>0?'delta-up':delta<0?'delta-down':'delta-same';
+        const dt = delta>0?`▲ +${delta}`:delta<0?`▼ ${delta}`:'= No Change';
+        document.getElementById('bmodal-replay-result').innerHTML = `
+          <div class="sim-result-box">
+            <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;">Re-Simulation Results</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                <div style="text-align:center;"><div style="font-size:0.65rem;color:var(--muted);">Original</div><div style="font-family:'JetBrains Mono',monospace;font-size:1.4rem;color:${riskColor(origScore)};">${origScore}</div></div>
+                <div style="color:var(--muted);font-size:1.5rem;">→</div>
+                <div style="text-align:center;"><div style="font-size:0.65rem;color:var(--muted);">New Score</div><div style="font-family:'JetBrains Mono',monospace;font-size:1.8rem;font-weight:700;color:${riskColor(newScore)};">${newScore}</div></div>
+                <span class="delta-badge ${dc}">${dt}</span>
+            </div>
+            <div style="margin-bottom:8px;font-size:0.8rem;"><span style="color:var(--muted)">Anomaly: </span><span style="color:${data.ueba_output?.is_anomaly?'var(--crit)':'var(--low)'}">${data.ueba_output?.is_anomaly?'⚠ YES':'✓ NO'}</span>${data.delta?.anomaly_change?'<span style="color:#fbbf24;margin-left:8px;">(changed!)</span>':''}</div>
+            <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:10px;">
+                <div style="font-size:0.68rem;color:#6ee7b7;margin-bottom:4px;">NEW SOAR DECISION</div>
+                <div style="font-weight:700;color:#fff;margin-bottom:4px;">${data.soar?.action||'—'}</div>
+                <div style="font-size:0.78rem;color:#94a3b8;">${data.soar?.explanation||'—'}</div>
+            </div>
+          </div>`;
+    } catch(e){ document.getElementById('bmodal-replay-result').innerHTML=`<p style="color:var(--crit);font-size:0.82rem;margin-top:10px;">Error: ${e.message}</p>`; }
+    btn.disabled=false; btn.textContent='⚡ Re-Simulate Pipeline';
+}
+
+function updatePaginationUI(){
+    document.getElementById('batch-pagination').style.display = 'flex';
+    document.getElementById('page-info').textContent = `Page ${batchPage} of ${batchTotalPages}`;
+    document.getElementById('page-prev').disabled = (batchPage <= 1);
+    document.getElementById('page-next').disabled = (batchPage >= batchTotalPages);
+}
+
+function changeBatchPage(delta){
+    const newPage = batchPage + delta;
+    if(newPage >= 1 && newPage <= batchTotalPages) runBatchSimulation(newPage);
+}
+
 </script>
 </body>
 </html>

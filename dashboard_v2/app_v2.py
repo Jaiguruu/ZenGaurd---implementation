@@ -152,6 +152,18 @@ def replay():
     })
 
 
+# ── Batch Test Evaluation API ────────────────────────────────────────────────
+@app.route("/api/evaluate_test")
+def evaluate_test():
+    """Run evaluation on the 30% test split with pagination."""
+    from simulator import run_batch_evaluation
+    page  = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 50))
+    
+    result = run_batch_evaluation(page=page, limit=limit)
+    return jsonify(result)
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     print("[*] Starting ZenGuard Live War Room on http://localhost:5002")

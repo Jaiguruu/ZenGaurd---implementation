@@ -284,3 +284,86 @@ def run_simulation():
     SIM.running = False
     _publish({"__done__": True, "ts": time.time()})
     print("[+] Simulation complete.")
+
+def load_test_split():
+    """Loads ueba_dataset.csv and returns the 30% test split."""
+    dataset_path = os.path.join(UEBA_DIR, "ueba_dataset.csv")
+    if not os.path.exists(dataset_path):
+        return None, "Dataset not found at " + dataset_path
+
+    try:
+        df = pd.read_csv(dataset_path)
+        # Match splitting logic in train.py
+        from sklearn.model_selection import train_test_split
+        _, test_df = train_test_split(df, test_size=0.3, random_state=42)
+        return test_df, None
+    except Exception as e:
+        return None, str(e)
+
+def run_batch_evaluation(page=1, limit=50):
+    """
+    Evaluates a slice of the 30% test split.
+    Returns: { results: [...], total_test_size: N, page, limit }
+    """
+    test_df, err = load_test_split()
+    if err:
+        return {"error": err}
+    
+    total = len(test_df)
+    start = (page - 1) * limit
+    end = start + limit
+    
+    # Slice the test dataframe
+    subset = test_df.iloc[start:end]
+    
+    results = []
+    for _, row in subset.iterrows():
+        # Input features for UEBA
+        features = {
+            "failed_logins":              int(row.get("failed_logins", 0)),
+            "privilege_change_attempted": int(row.get("privilege_change_attempted", 0)),
+            "external_connection":        int(row.get("external_connection", 0)),
+            "MFA_bypassed":               int(row.get("MFA_bypassed", 0)),
+            "session_duration":           float(row.get("session_duration", 0.0)),
+            "access_hour":                int(row.get("access_hour", 12)),
+            "device_trust_score":         float(row.get("device_trust_score", 0.5)),
+        }
+        
+        category = row.get("attack_category", "unknown")
+        is_attack = category.lower() != "benign"
+        
+        # ── Stage 1: SIEM (Synthesized raw fields for display) ──
+        siem_raw = {
+            "dst_port":    22 if is_attack and category == 'brute_force' else (80 if not is_attack else 443),
+            "flow_dur_ms": round(features["session_duration"] * 60000, 1),
+            "fwd_pkts":    random.randint(5, 50) if is_attack else random.randint(1, 10),
+            "bwd_pkts":    random.randint(5, 50) if is_attack else random.randint(1, 10),
+            "flow_bytes_s": round(random.uniform(100, 5000), 1),
+            "syn_flags":   features["failed_logins"] if category == 'brute_force' else 0,
+            "rst_flags":   1 if is_attack else 0,
+            "pkt_len_var": round(random.uniform(0, 1000), 1),
+            "label":       category,
+        }
+
+        # ── Stage 2: UEBA scoring ──
+        ueba_out = score_ueba(features)
+
+        # ── Stage 3: SOAR decision ──
+        soar_out = query_soar(ueba_out["risk_score"], features, ueba_out)
+
+        results.append({
+            "id": str(uuid.uuid4())[:8],
+            "is_attack": is_attack,
+            "siem": siem_raw,
+            "ueba_input": features,
+            "ueba_output": ueba_out,
+            "soar": soar_out,
+        })
+        
+    return {
+        "results": results,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": math.ceil(total / limit)
+    }
