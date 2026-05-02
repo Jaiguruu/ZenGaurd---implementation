@@ -1,0 +1,173 @@
+"""
+================================================================================
+dashboard_v2/app_v2.py
+ZenGuard — Live Pipeline War Room Server
+Port: 5002
+
+Serves the dashboard and streams live events via Server-Sent Events (SSE).
+No database writes. Pure real-time push.
+================================================================================
+"""
+import json, threading, queue, time, os
+from datetime import datetime, timezone
+from flask import Flask, Response, render_template, jsonify, request
+from flask_cors import CORS
+
+# Bootstrap simulator (must be importable from this location)
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from simulator import SIM, run_simulation
+
+app = Flask(__name__, static_folder=os.path.dirname(os.path.abspath(__file__)),
+            static_url_path="")
+CORS(app)
+
+# ── Serve the war room UI ────────────────────────────────────────────────────
+@app.route("/")
+def index():
+    html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index_v2.html")
+    with open(html_path, encoding="utf-8") as f:
+        return f.read(), 200, {"Content-Type": "text/html"}
+
+
+# ── SSE Stream ───────────────────────────────────────────────────────────────
+def event_stream(client_queue: queue.Queue):
+    """Generator that yields SSE-formatted data strings."""
+    # Send history first so new clients see the last 200 events immediately
+    with SIM.lock:
+        catchup = list(SIM.history)
+    for env in catchup:
+        yield f"data: {json.dumps(env)}\n\n"
+
+    while True:
+        try:
+            envelope = client_queue.get(timeout=30)
+            yield f"data: {json.dumps(envelope)}\n\n"
+        except queue.Empty:
+            yield ": heartbeat\n\n"  # keep-alive ping
+
+@app.route("/api/stream")
+def stream():
+    client_q = queue.Queue(maxsize=500)
+    with SIM.lock:
+        SIM.subscribers.append(client_q)
+
+    def cleanup():
+        with SIM.lock:
+            if client_q in SIM.subscribers:
+                SIM.subscribers.remove(client_q)
+
+    def generate():
+        try:
+            yield from event_stream(client_q)
+        finally:
+            cleanup()
+
+    return Response(generate(), mimetype="text/event-stream",
+                    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+# ── Status API ───────────────────────────────────────────────────────────────
+@app.route("/api/status")
+def status():
+    return jsonify({
+        "running":        SIM.running,
+        "paused":         SIM.paused,
+        "current_file":   SIM.current_file,
+        "current_scenario": SIM.current_scenario,
+        "events_total":   SIM.events_total,
+        "attacks_total":  SIM.attacks_total,
+        "soar_actions":   SIM.soar_actions,
+        "speed_factor":   SIM.speed_factor,
+        "subscribers":    len(SIM.subscribers),
+    })
+
+# ── Control API ───────────────────────────────────────────────────────────────
+@app.route("/api/control", methods=["POST"])
+def control():
+    action = request.json.get("action", "")
+    if action == "pause":
+        SIM.paused = True
+    elif action == "resume":
+        SIM.paused = False
+    elif action == "speed":
+        SIM.speed_factor = float(request.json.get("value", 1.0))
+    elif action == "restart":
+        SIM.running  = False
+        SIM.paused   = False
+        time.sleep(0.5)
+        thread = threading.Thread(target=run_simulation, daemon=True)
+        thread.start()
+    return jsonify({"ok": True, "action": action})
+
+
+# ── Event History API ─────────────────────────────────────────────────────────
+@app.route("/api/history")
+def history():
+    """Return the last N events stored in memory for the event log."""
+    limit = min(int(request.args.get("limit", 200)), 500)
+    with SIM.lock:
+        events = list(SIM.history[-limit:])
+    return jsonify({"events": events, "total": len(events)})
+
+
+# ── Replay / Re-evaluate API ──────────────────────────────────────────────────
+@app.route("/api/replay", methods=["POST"])
+def replay():
+    """
+    Re-run a modified feature set through UEBA + SOAR pipeline.
+    Body: { features: { failed_logins, privilege_change_attempted, ... } }
+    Returns: { ueba_output, soar, delta } where delta shows the change vs original.
+    """
+    from simulator import score_ueba, query_soar
+    body     = request.get_json(silent=True) or {}
+    features = body.get("features", {})
+    original = body.get("original_ueba", {})  # original scores for delta computation
+
+    # Cast inputs to correct types
+    cleaned = {
+        "failed_logins":              int(features.get("failed_logins", 0)),
+        "privilege_change_attempted": int(features.get("privilege_change_attempted", 0)),
+        "external_connection":        int(features.get("external_connection", 0)),
+        "MFA_bypassed":               int(features.get("MFA_bypassed", 0)),
+        "session_duration":           float(features.get("session_duration", 30.0)),
+        "access_hour":                int(features.get("access_hour", 14)),
+        "device_trust_score":         float(features.get("device_trust_score", 0.9)),
+    }
+
+    ueba_out = score_ueba(cleaned)
+    soar_out = query_soar(ueba_out["risk_score"], cleaned, ueba_out)
+
+    # Compute delta vs original
+    orig_risk = original.get("risk_score", ueba_out["risk_score"])
+    delta = {
+        "risk_change":    ueba_out["risk_score"] - orig_risk,
+        "anomaly_change": ueba_out["is_anomaly"] != original.get("is_anomaly", ueba_out["is_anomaly"]),
+    }
+
+    return jsonify({
+        "ueba_output": ueba_out,
+        "soar":        soar_out,
+        "delta":       delta,
+        "features_used": cleaned,
+    })
+
+
+# ── Batch Test Evaluation API ────────────────────────────────────────────────
+@app.route("/api/evaluate_test")
+def evaluate_test():
+    """Run evaluation on the 30% test split with pagination."""
+    from simulator import run_batch_evaluation
+    page  = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 50))
+    
+    result = run_batch_evaluation(page=page, limit=limit)
+    return jsonify(result)
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    print("[*] Starting ZenGuard Live War Room on http://localhost:5002")
+    print("[*] Launching simulation thread...")
+    sim_thread = threading.Thread(target=run_simulation, daemon=True)
+    sim_thread.start()
+    app.run(host="0.0.0.0", port=5002, debug=False, threaded=True)
