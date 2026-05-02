@@ -67,7 +67,7 @@ import sys
 import time
 import glob
 from datetime import datetime, timezone, timedelta
-from typing import Iterator
+from typing import Iterator, Optional
 
 # Third-party (pip install faker)
 try:
@@ -258,7 +258,7 @@ def normalize_attack_category(raw_label: str) -> str:
 # SECTION 2 — CSV READER
 # =============================================================================
 
-def resolve_column(row: dict, candidates: list[str]) -> str | None:
+def resolve_column(row: dict, candidates: list[str]) -> Optional[str]:
     """
     Try each candidate column name in order and return the first value found.
     Handles leading-space column names common in CIC-IDS-2017.
@@ -556,7 +556,7 @@ def spoof_auth_log(flow: dict) -> str:
     return "\n".join(lines)
 
 
-def spoof_snort_alert(flow: dict) -> str | None:
+def spoof_snort_alert(flow: dict) -> Optional[str]:
     """
     Generate a Snort fast-alert format line for non-benign network flows.
     Returns None for benign flows (no IDS alert should fire for normal traffic).
@@ -668,10 +668,10 @@ def _derive_auth_meta(flow: dict) -> tuple[str, str, str]:
 
 def build_scenario_flow(
     attack_category: str,
-    src_ip: str | None = None,
-    dst_ip: str | None = None,
-    user_id: str | None = None,
-    forced_features: dict | None = None,
+    src_ip: Optional[str] = None,
+    dst_ip: Optional[str] = None,
+    user_id: Optional[str] = None,
+    forced_features: Optional[dict] = None,
 ) -> dict:
     """Helper that constructs a fully-synthesized flow for scenario injection."""
     src = src_ip or _rand_ip_external()
@@ -886,7 +886,7 @@ def _severity_colour(attack_cat: str) -> str:
     return colours.get(attack_cat, C.WHITE)
 
 
-def _print_event_summary(flow: dict, auth_log: str, snort_alert: str | None,
+def _print_event_summary(flow: dict, auth_log: str, snort_alert: Optional[str],
                           scenario: bool = False) -> None:
     """Print a concise, colour-coded summary of one replayed event."""
     cat     = flow.get("attack_category", "unknown")
@@ -990,38 +990,30 @@ class LogstashTCPSender:
 
     def send(self, payload) -> bool:
         """
-        Send a single event to Logstash over TCP.
-
-        Accepts either:
-          - dict  → serialized as a JSON line (Logstash codec => "json")
-          - str   → sent as-is with a trailing newline (legacy fallback)
-
-        Returns True on success, False on failure.
+        Send a single event to Dashboard over HTTP directly (Bypassing ES/Logstash).
         """
-        import json as _json
-        if not self._ensure_connected():
-            _stats["errors"] += 1
-            return False
+        import requests
         try:
             if isinstance(payload, dict):
-                line = _json.dumps(payload, default=str)
-            else:
-                line = str(payload)
-            self._sock.sendall((line + "\n").encode("utf-8"))
+                # Ensure each event has a generated event_id before sending to Dashboard
+                if "event_id" not in payload:
+                    import uuid
+                    payload["event_id"] = str(uuid.uuid4())
+                
+                # Wrap it in the batch format expected by Dashboard
+                batch_payload = {
+                    "schema_version": "zenguard/ueba-payload/v1",
+                    "events": [payload]
+                }
+                requests.post("http://127.0.0.1:5001/api/ingest", json=batch_payload, timeout=2)
             return True
-        except (BrokenPipeError, ConnectionResetError, OSError) as e:
-            cprint(C.WARN, f"  [TCP] Send failed ({e}) — will reconnect on next event.")
-            try: self._sock.close()
-            except: pass
-            self._sock = None
+        except Exception as e:
+            cprint(C.WARN, f"  [HTTP] Send failed ({e})")
             _stats["errors"] += 1
             return False
 
     def close(self) -> None:
-        if self._sock:
-            try: self._sock.close()
-            except: pass
-        self._sock = None
+        pass
 
 
 # =============================================================================
